@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Controle n8n</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root {
+            --background: #030712;
+            --surface: #111827;
+            --primary: #00F5A0;
+            --primary-hover: #00D88F;
+            --text-primary: #F0F4F8;
+            --text-secondary: #8B949E;
+            --border: #212B3F;
+            --sidebar-width: 260px;
+            --sidebar-width-collapsed: 80px;
+            
+            --success: #00F5A0;
+            --error: #FF4D6D;
+            --info: #3B82F6;
+        }
+
+        body.light-theme {
+            --background: #f3f4f6;
+            --surface: #ffffff;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: auto;
+            min-height: 100%;
+        }
+        
+        #particles-js {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+
+        .app-layout {
+            display: flex;
+        }
+        
+        .page-content {
+            display: none;
+        }
+        .page-content.active {
+            display: block;
+        }
+
+        /* --- LAYOUT --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            background-color: var(--surface);
+            border-right: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+            z-index: 10;
+            flex-shrink: 0;
+            transition: width 0.3s ease-in-out, padding 0.3s ease-in-out;
+            overflow-x: hidden;
+        }
+        
+        .main-content {
+            flex: 1;
+            min-width: 0;
+            padding: 30px;
+            transition: margin-left 0.3s ease-in-out;
+            margin-left: 0;
+        }
+
+        .sidebar-header { display: flex; align-items: center; gap: 15px; margin-bottom: 40px; transition: opacity 0.2s ease-in-out; }
+        #ai-animation-canvas { width: 40px; height: 40px; }
+        .sidebar-header h2 { font-size: 1.4rem; color: var(--text-primary); white-space: nowrap; }
+        .sidebar-nav { flex-grow: 1; }
+        .sidebar-nav ul { list-style: none; padding-left: 0; }
+        .sidebar-nav li a { display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-radius: 8px; text-decoration: none; color: var(--text-secondary); font-weight: 500; transition: background-color 0.2s ease, color 0.2s ease; cursor: pointer; }
+        .sidebar-nav li a span { white-space: nowrap; }
+        .sidebar-nav li a svg { width: 22px; height: 22px; flex-shrink: 0; }
+        .sidebar-nav li a:hover { background-color: rgba(0, 245, 160, 0.1); color: var(--primary); }
+        .sidebar-nav li a.active { background-color: var(--primary); color: #0A0F1A; font-weight: 600; }
+        .sidebar-nav li a.active svg { stroke: #0A0F1A; }
+        .container { width: 100%; max-width: 1600px; margin: 0 auto; }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #sidebar-toggle {
+            position: absolute;
+            top: 50%;
+            left: calc(var(--sidebar-width) - 15px);
+            transform: translateY(-50%);
+            width: 30px;
+            height: 30px;
+            background-color: var(--primary);
+            border: 2px solid var(--background);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 11;
+            transition: left 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+
+        #sidebar-toggle svg {
+            transition: transform 0.3s ease-in-out;
+            stroke: var(--background);
+        }
+
+        /* --- ESTADO RECOLHIDO --- */
+        .sidebar-collapsed .sidebar {
+            width: var(--sidebar-width-collapsed);
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+        .sidebar-collapsed #sidebar-toggle {
+            left: calc(var(--sidebar-width-collapsed) - 15px);
+        }
+        .sidebar-collapsed .sidebar-header,
+        .sidebar-collapsed .sidebar-nav li a span {
+            opacity: 0;
+            width: 0;
+            visibility: hidden;
+            transition: opacity 0.1s ease, width 0.1s ease, visibility 0.1s ease;
+        }
+        .sidebar-collapsed .sidebar-nav li a { justify-content: center; padding: 12px; gap: 0; }
+        .sidebar-collapsed .sidebar-footer { flex-direction: column-reverse; gap: 15px; border-top-color: transparent; }
+        .sidebar-collapsed #sidebar-toggle svg { transform: rotate(180deg); }
+
+        /* --- CONTROLES HEADER --- */
+        .header-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .panel-title { font-size: 1.5rem; font-weight: 600; }
+        .page-subtitle { 
+            font-size: 0.95rem; 
+            color: var(--text-secondary); 
+            margin-bottom: 30px; 
+            margin-top: -15px; 
+            max-width: 800px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .page-subtitle svg { width: 16px; height: 16px; stroke: var(--text-secondary); flex-shrink: 0; }
+        .btn { padding: 10px 18px; font-size: 0.9rem; font-weight: 600; color: #0A0F1A; background-color: var(--primary); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: background-color 0.2s ease; }
+        .btn:hover { background-color: var(--primary-hover); }
+        .btn:disabled { background-color: #555; cursor: not-allowed; }
+        .btn.btn-danger { background-color: var(--error); color: white; }
+        .btn.btn-secondary { background-color: #374151; color: var(--text-primary); }
+        .btn.btn-secondary:hover { background-color: #4b5563; }
+        .btn.btn-icon { padding: 8px; background-color: var(--surface); color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn.btn-icon:hover { background-color: #1F2937; color: var(--text-primary); }
+
+        #theme-toggle { padding: 8px; width: 40px; height: 40px; flex-shrink: 0; }
+        #theme-toggle .sun { display: none; }
+        #theme-toggle .moon { display: block; }
+        body.light-theme #theme-toggle .sun { display: block; }
+        body.light-theme #theme-toggle .moon { display: none; }
+
+        /* --- ELEMENTOS GERAIS --- */
+        .card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 25px; margin-bottom: 30px; }
+        .card h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+        .card h2 svg { width: 22px; height: 22px; stroke: var(--primary); }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; align-items: end; }
+        .input-group { position: relative; }
+        .input-group label { display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; }
+        .input-group input { width: 100%; padding: 12px 15px; font-size: 0.95rem; background-color: var(--background); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .input-group input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 245, 160, 0.2); }
+        
+        /* --- CORREÇÃO DO ÍCONE DO CALENDÁRIO --- */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+        
+        /* --- CUSTOM SELECT --- */
+        .custom-select-wrapper { position: relative; }
+        .custom-select-trigger {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 0.95rem;
+            background-color: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+         .custom-select-trigger::after {
+            content: '';
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid var(--text-secondary);
+            transition: transform 0.2s ease;
+        }
+        .custom-select-wrapper.open .custom-select-trigger::after {
+            transform: rotate(180deg);
+        }
+        .custom-options {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-top: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        .custom-select-wrapper.open .custom-options { display: block; }
+        .custom-option {
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .custom-option:hover { background-color: rgba(255, 255, 255, 0.05); }
+        .custom-option input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+        }
+        
+        /* --- NOTIFICAÇÕES --- */
+        .notification-container { position: fixed; bottom: 20px; right: 20px; z-index: 1001; display: flex; flex-direction: column; gap: 10px; }
+        .toast { color: #0A0F1A; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); opacity: 0; transform: translateX(120%); animation: slideIn 0.4s forwards, fadeOut 0.4s 4s forwards; font-weight: 600; }
+        .toast.success { background-color: var(--success); }
+        .toast.error { background-color: var(--error); color: white; }
+        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+        @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateX(120%); } }
+
+        /* --- MODAIS --- */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); animation: fadeIn 0.3s; }
+        .modal-content { background-color: var(--surface); margin: 10% auto; padding: 30px; border: 1px solid var(--border); width: 90%; max-width: 600px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); animation: slideUp 0.4s; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid var(--border); margin-bottom: 25px; }
+        .modal-header h2 { font-size: 1.4rem; display: flex; align-items: center; gap: 10px; }
+        .modal-header h2 svg { width: 22px; height: 22px; stroke: var(--text-secondary); }
+        .close-btn { color: var(--text-secondary); font-size: 28px; font-weight: bold; cursor: pointer; transition: color 0.2s; }
+        .close-btn:hover, .close-btn:focus { color: var(--text-primary); }
+        @keyframes slideUp { from {transform: translateY(30px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
+        @keyframes slideDown { from {transform: translateY(0); opacity: 1;} to {transform: translateY(30px); opacity: 0;} }
+        .modal-actions { display: flex; gap: 15px; justify-content: flex-end; margin-top: 25px; }
+        #confirmModal .modal-content { max-width: 450px; text-align: center; }
+        #confirm-message { font-size: 1.1rem; line-height: 1.6; }
+
+        /* --- PÁGINA DE USUÁRIOS & TABELAS GERAIS --- */
+        .stats-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .stat-card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+        .stat-card h3 { font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card p { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); }
+        .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-top: 30px; }
+        .table-scroller { overflow-x: auto; }
+        .table { width: 100%; border-collapse: collapse; }
+        .table thead th { background: #0A0F1A; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .5px; font-size: .75rem; padding: 12px 15px; text-align: left; white-space: nowrap;}
+        .table td { padding: 14px 15px; border-bottom: 1px solid var(--border); font-size: .9rem; white-space: nowrap; }
+        .table tbody tr:last-child td { border-bottom: none; }
+        .table tbody tr:hover { background: #1F2937; }
+        .table-actions { display: flex; gap: 10px; }
+        .loading-spinner {
+            border: 2px solid var(--border);
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .titular-sub-row { font-size: 0.8rem; color: var(--text-secondary); padding-left: 10px; }
+
+        /* --- Light Theme Overrides --- */
+        body.light-theme .btn.btn-icon:hover { background-color: #f3f4f6; }
+        body.light-theme .table thead th { background: #f9fafb; }
+        body.light-theme .table tbody tr:hover { background: #f3f4f6; }
+        body.light-theme .btn-secondary { background-color: #e5e7eb; color: var(--text-primary); }
+        body.light-theme .btn-secondary:hover { background-color: #d1d5db; }
+        body.light-theme input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0); }
+        body.light-theme .custom-option:hover { background-color: rgba(0, 0, 0, 0.03); }
+
+    </style>
+</head>
+<body class="show-dashboard">
+
+    <div id="particles-js"></div>
+
+    <div class="app-layout">
+        <button id="sidebar-toggle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0" 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <canvas id="ai-animation-canvas"></canvas>
+                <h2>Central de Controle</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                     <li><a data-page="whatsapp" class="active"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg><span>Conferência e Disparo</span></a></li>
+                     <li><a data-page="users"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0" 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Gerenciar Usuários</span></a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="theme-toggle" class="btn btn-icon" title="Alternar tema">
+                    <svg class="sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <svg class="moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <!-- PÁGINA DE CONFERÊNCIA E DISPARO -->
+            <div id="whatsapp-page" class="page-content active">
+                <div class="container">
+                    <div class="header-controls">
+                        <h1 class="panel-title">Conferência e Disparo em Lote</h1>
+                    </div>
+                    <p class="page-subtitle">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.7 19.3 2 22l2.7-2.7"/><path d="M12.8 11.2 14 10l-4.4-4.4-1.2 1.2"/><path d="m2.3 21.7 5.1-5.1"/><path d="M11 2a3 3 0 0 1 3 3L8 11l-3 3 3 3 6-6 3-3a3 3 0 0 1 3 3"/><path d="M14 18l-3-3"/></svg>
+                        <span>Adicione investidores, confira os saldos do período e dispare notificações em massa.</span>
+                    </p>
+                    
+                    <div class="card">
+                        <h2>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m8 17 4 4 4-4"/></svg>
+                            1. Montar Lista de Envio
+                        </h2>
+                        <div class="form-grid">
+                             <div class="input-group" style="flex-grow: 2;">
+                                <label for="investor-selector">Investidores</label>
+                                <div class="custom-select-wrapper" id="investor-selector-wrapper">
+                                    <div class="custom-select-trigger">
+                                        <span>Selecione...</span>
+                                    </div>
+                                    <div class="custom-options">
+                                        <!-- Options will be inserted by JS -->
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="input-group"><label for="start-date">Data de Início</label><input type="date" id="start-date"></div>
+                            <div class="input-group"><label for="end-date">Data Final</label><input type="date" id="end-date"></div>
+                            <button id="add-investor-btn" class="btn" style="height: 47px;">Adicionar à Lista</button>
+                        </div>
+                    </div>
+
+                    <div class="table-card">
+                        <div class="table-scroller">
+                            <table class="table" id="batch-table">
+                                <thead>
+                                    <tr>
+                                        <th>Investidor</th>
+                                        <th>Saldo Anterior</th>
+                                        <th>Saldo Atual</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="batch-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div style="text-align: right; margin-top: 20px;">
+                        <button id="send-all-btn" class="btn" disabled><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Enviar Extratos por E-mail</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PÁGINA DE GERENCIAMENTO DE USUÁRIOS -->
+            <div id="users-page" class="page-content">
+                <div class="container">
+                    <div class="header-controls">
+                        <h1 class="panel-title">Gerenciar Usuários</h1>
+                        <button id="add-user-btn" class="btn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Adicionar Usuário</button>
+                    </div>
+                    <p class="page-subtitle"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Adicione, edite ou remova usuários da base de dados.</span></p>
+                    <div class="stats-cards">
+                        <div class="stat-card"><h3>Total de Usuários</h3><p id="total-users-stat">0</p></div>
+                        <div class="stat-card"><h3>Total de Investidores</h3><p id="total-investors-stat">0</p></div>
+                    </div>
+                    <div class="table-card">
+                        <div class="table-scroller">
+                            <table class="table" id="users-table">
+                                <thead><tr><th>Investidor</th><th>Usuário Anima</th><th>Email</th><th>Ações</th></tr></thead>
+                                <tbody id="users-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- MODAIS -->
+    <div id="user-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="user-modal-title"></h2><span class="close-btn">&times;</span></div>
+            <form id="user-form">
+                <input type="hidden" id="user-id">
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+                    <div class="input-group"><label for="user-investidor">Investidor</label><input type="text" id="user-investidor" placeholder="Nome do Investidor" required></div>
+                    <div class="input-group"><label for="user-anima">Usuário Anima</label><input type="text" id="user-anima" placeholder="Nome do usuário no sistema Anima"></div>
+                    <div class="input-group" style="grid-column: 1 / -1;"><label for="user-email">Email</label><input type="email" id="user-email" placeholder="contato@email.com" required></div>
+                </div>
+                <button type="submit" class="btn" style="width: 100%; margin-top: 20px;">Salvar</button>
+            </form>
+        </div>
+    </div>
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <p id="confirm-message">Você tem certeza?</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="confirm-cancel-btn">Cancelar</button>
+                <button class="btn btn-danger" id="confirm-ok-btn">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-container" class="notification-container"></div>
+    
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        // --- CONFIGURAÇÃO SUPABASE ---
+        const SUPABASE_URL = 'https://supabase.infodash.com.br';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzE1MDUwODAwLAogICJleHAiOiAxODcyODE3MjAwCn0.BAmp3D2UEBQIUlhNGp5Q7sDMN3QLRyib7aztmMgH-_c';
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            db: { schema: 'dbfirma_capital' }
+        });
+
+        // --- CONFIGURAÇÃO N8N ---
+        const N8N_CHECK_WEBHOOK_URL = 'https://webhook.infodash.com.br/webhook/dc26f840-eccc-435e-8c63-3c34a44a9ee7';
+        const N8N_SEND_ALL_WEBHOOK_URL = 'https://webhook.infodash.com.br/webhook/db24508d-15d9-4854-838f-2f319ba0f21d';
+
+
+        // --- STATE ---
+        let allUsersData = [];
+        let investorsMap = new Map();
+        let batchList = new Map(); 
+        let confirmCallback = null;
+
+        // --- DOM Elements ---
+        const body = document.body;
+        const appLayout = document.querySelector('.app-layout');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const themeToggle = document.getElementById('theme-toggle');
+        const navLinks = document.querySelectorAll('.sidebar-nav a');
+        const notificationContainer = document.getElementById('notification-container');
+        
+        // --- WhatsApp Page Elements ---
+        const customSelectWrapper = document.getElementById('investor-selector-wrapper');
+        const customSelectTrigger = customSelectWrapper.querySelector('.custom-select-trigger');
+        const customOptions = customSelectWrapper.querySelector('.custom-options');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        const addInvestorBtn = document.getElementById('add-investor-btn');
+        const batchTableBody = document.getElementById('batch-table-body');
+        const sendAllBtn = document.getElementById('send-all-btn');
+
+        // --- Users Page Elements ---
+        const addUserBtn = document.getElementById('add-user-btn');
+        const usersTableBody = document.getElementById('users-table-body');
+        const totalUsersStat = document.getElementById('total-users-stat');
+        const totalInvestorsStat = document.getElementById('total-investors-stat');
+
+        // --- Modal Elements ---
+        const userModal = document.getElementById('user-modal');
+        const userModalTitle = document.getElementById('user-modal-title');
+        const userForm = document.getElementById('user-form');
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmOkBtn = document.getElementById('confirm-ok-btn');
+        const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+        const confirmMessage = document.getElementById('confirm-message');
+        
+        // --- Helper Functions ---
+        const money = (v) => (v != null ? parseFloat(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'N/A');
+
+        function showNotification(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            notificationContainer.appendChild(toast);
+            toast.addEventListener('animationend', (e) => { if (e.animationName === 'fadeOut') { toast.remove(); } });
+        }
+        
+        // --- DATA LOADING & PROCESSING ---
+        async function loadAllData() {
+            const { data, error } = await sb
+                .from('dUsuariosEmail')
+                .select('id, email, "usuarioAnima", investidor')
+                .order('investidor', { ascending: true });
+
+            if (error) {
+                showNotification('Erro ao buscar dados.', 'error');
+                return;
+            }
+            
+            allUsersData = data;
+            processInvestors();
+            populateInvestorSelector();
+            renderUsersPage();
+        }
+
+        function processInvestors() {
+            investorsMap.clear();
+            allUsersData.forEach(user => {
+                if (!user.investidor) return;
+                if (!investorsMap.has(user.investidor)) {
+                    investorsMap.set(user.investidor, []);
+                }
+                investorsMap.get(user.investidor).push(user);
+            });
+        }
+        
+        function populateInvestorSelector() {
+            customOptions.innerHTML = '';
+            const sortedInvestors = [...investorsMap.keys()].sort();
+            sortedInvestors.forEach(name => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'custom-option';
+                optionDiv.dataset.value = name;
+                optionDiv.innerHTML = `<input type="checkbox" id="investor-${name.replace(/\s/g, '')}"> <label for="investor-${name.replace(/\s/g, '')}">${name}</label>`;
+                customOptions.appendChild(optionDiv);
+            });
+        }
+
+        // --- BATCH PAGE LOGIC ---
+        addInvestorBtn.addEventListener('click', async () => {
+            const selectedInvestors = Array.from(customOptions.querySelectorAll('input[type="checkbox"]:checked'))
+                                         .map(cb => cb.closest('.custom-option').dataset.value);
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+
+            if (selectedInvestors.length === 0 || !startDate || !endDate) {
+                showNotification('Selecione ao menos um investidor e o período completo.', 'error');
+                return;
+            }
+            
+            for (const investorName of selectedInvestors) {
+                if (batchList.has(investorName)) {
+                    showNotification(`Investidor "${investorName}" já está na lista.`, 'info');
+                    continue;
+                }
+                 const investorData = { name: investorName, status: 'loading', accounts: [] };
+                 batchList.set(investorName, investorData);
+            }
+            
+            renderBatchTable();
+            
+            for (const investorName of selectedInvestors) {
+                 await fetchInvestorBalancesFromN8N(investorName, startDate, endDate);
+            }
+        });
+        
+        async function fetchInvestorBalancesFromN8N(investorName, startDate, endDate) {
+            const investorData = batchList.get(investorName);
+
+            try {
+                const response = await fetch(N8N_CHECK_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: investorName,
+                        dataInicio: startDate,
+                        dataFim: endDate
+                    })
+                });
+
+                if (!response.ok) throw new Error(`Servidor n8n respondeu com status: ${response.status}`);
+                
+                const result = await response.json();
+                const accountsData = Array.isArray(result) ? result.map(r => r.json) : [result.json || result];
+
+                if (!accountsData || accountsData.length === 0 || accountsData[0].TITULAR === undefined) {
+                     throw new Error('A resposta do n8n está vazia ou em formato inesperado.');
+                }
+                
+                if (accountsData[0].error) throw new Error(accountsData[0].error);
+
+                investorData.status = 'loaded';
+                investorData.accounts = accountsData.map(acc => ({
+                    titular: acc.TITULAR,
+                    saldoAnterior: acc.saldoAnterior,
+                    saldoAtual: acc.saldoAtual
+                }));
+
+            } catch (error) {
+                investorData.status = 'error';
+                investorData.errorMsg = error.message;
+                showNotification(`Erro ao buscar dados para ${investorName} via n8n.`, 'error');
+            }
+            
+            renderBatchTable();
+        }
+
+        function renderBatchTable() {
+            batchTableBody.innerHTML = '';
+            if (batchList.size === 0) {
+                batchTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Adicione investidores para conferir os saldos.</td></tr>';
+                sendAllBtn.disabled = true;
+                return;
+            }
+            
+            const hasLoadedInvestors = Array.from(batchList.values()).some(d => d.status === 'loaded');
+            sendAllBtn.disabled = !hasLoadedInvestors;
+            
+            batchList.forEach((data, name) => {
+                let rowHtml = '';
+                if (data.accounts.length > 0) {
+                    data.accounts.forEach((account, index) => {
+                         const isFirstRow = index === 0;
+                         let statusHtml = '';
+                         switch (data.status) {
+                            case 'loaded': statusHtml = `<td style="color: var(--success);">Pronto</td>`; break;
+                            case 'sent': statusHtml = `<td style="color: var(--info);">Enviado</td>`; break;
+                            case 'send-error': statusHtml = `<td style="color: var(--error);" title="${data.errorMsg || 'Erro no envio'}">Erro no Envio</td>`; break;
+                            default: statusHtml = `<td>-</td>`
+                         }
+                         rowHtml += `
+                            <tr data-investor-name="${name}">
+                                <td>
+                                    ${isFirstRow ? name : ''}
+                                    <div class="titular-sub-row">${account.titular || 'Conta Principal'}</div>
+                                </td>
+                                <td>${money(account.saldoAnterior)}</td>
+                                <td>${money(account.saldoAtual)}</td>
+                                <td>${isFirstRow ? statusHtml : ''}</td>
+                                <td>${isFirstRow ? '<button class="btn btn-danger remove-investor-btn">Remover</button>' : ''}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                     let statusHtml = '';
+                     switch (data.status) {
+                         case 'loading': statusHtml = `<td><div class="loading-spinner"></div></td>`; break;
+                         case 'error': statusHtml = `<td style="color: var(--error);" title="${data.errorMsg}">Erro</td>`; break;
+                         case 'sent': statusHtml = `<td><span style="color: var(--info);">Enviado</span></td>`; break;
+                         case 'send-error': statusHtml = `<td style="color: var(--error);" title="${data.errorMsg || 'Erro no envio'}">Erro no Envio</td>`; break;
+                         default: statusHtml = `<td>-</td>`
+                     }
+                      rowHtml = `
+                        <tr data-investor-name="${name}">
+                            <td>${name}</td>
+                            <td>...</td>
+                            <td>...</td>
+                            ${statusHtml}
+                            <td class="table-actions">
+                                <button class="btn btn-danger remove-investor-btn">Remover</button>
+                            </td>
+                        </tr>
+                    `;
+                }
+                 batchTableBody.innerHTML += rowHtml;
+            });
+        }
+        
+        batchTableBody.addEventListener('click', (e) => {
+             if (e.target.classList.contains('remove-investor-btn')) {
+                const investorName = e.target.closest('tr').dataset.investorName;
+                batchList.delete(investorName);
+                renderBatchTable();
+            }
+        });
+        
+        sendAllBtn.addEventListener('click', async () => {
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+
+            if (!startDate || !endDate) {
+                showNotification('As datas de início e fim devem estar preenchidas para o disparo.', 'error');
+                return;
+            }
+
+            const investorsToSend = Array.from(batchList.values()).filter(data => data.status === 'loaded');
+            
+            if (investorsToSend.length === 0) {
+                showNotification('Nenhum investidor com dados carregados para disparar.', 'info');
+                return;
+            }
+
+            sendAllBtn.disabled = true;
+            sendAllBtn.innerHTML = '<div class="loading-spinner"></div> Enviando...';
+
+            let successCount = 0;
+            for (const investorData of investorsToSend) {
+                try {
+                    const payload = {
+                        investidor: investorData.name,
+                        dataInicio: startDate,
+                        dataFim: endDate
+                    };
+
+                    const response = await fetch(N8N_SEND_ALL_WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        successCount++;
+                        investorData.status = 'sent';
+                    } else {
+                        throw new Error(`Status ${response.status}`);
+                    }
+                } catch (error) {
+                     showNotification(`Erro ao enviar para ${investorData.name}: ${error.message}`, 'error');
+                     investorData.status = 'send-error';
+                }
+                 renderBatchTable();
+            }
+            
+            showNotification(`${successCount} de ${investorsToSend.length} webhooks enviados com sucesso!`, 'success');
+            sendAllBtn.disabled = false;
+            sendAllBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Enviar Extratos por E-mail';
+        });
+
+        // --- Custom Select Logic ---
+        customSelectTrigger.addEventListener('click', () => {
+            customSelectWrapper.classList.toggle('open');
+        });
+
+        window.addEventListener('click', (e) => {
+            if (!customSelectWrapper.contains(e.target)) {
+                customSelectWrapper.classList.remove('open');
+            }
+        });
+
+        customOptions.addEventListener('change', () => {
+            const selectedCount = customOptions.querySelectorAll('input[type="checkbox"]:checked').length;
+            if (selectedCount === 0) {
+                customSelectTrigger.querySelector('span').textContent = 'Selecione...';
+            } else if (selectedCount === 1) {
+                const selectedName = customOptions.querySelector('input[type="checkbox"]:checked').closest('.custom-option').dataset.value;
+                customSelectTrigger.querySelector('span').textContent = selectedName;
+            } else {
+                customSelectTrigger.querySelector('span').textContent = `${selectedCount} investidores selecionados`;
+            }
+        });
+
+        // --- USERS PAGE LOGIC & MODALS (same as before) ---
+        function renderUsersPage() {
+            if(!usersTableBody) return;
+            usersTableBody.innerHTML = '';
+            if (allUsersData.length === 0) {
+                usersTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum usuário cadastrado.</td></tr>';
+            } else {
+                allUsersData.forEach(user => {
+                    const tr = document.createElement('tr');
+                    tr.dataset.userId = user.id;
+                    tr.innerHTML = `<td>${user.investidor || 'N/A'}</td><td>${user.usuarioAnima || 'N/A'}</td><td>${user.email}</td><td class="table-actions"><button class="btn btn-secondary edit-user-btn">Editar</button><button class="btn btn-danger delete-user-btn">Excluir</button></td>`;
+                    usersTableBody.appendChild(tr);
+                });
+            }
+            totalUsersStat.textContent = allUsersData.length;
+            totalInvestorsStat.textContent = investorsMap.size;
+        }
+        addUserBtn.addEventListener('click', () => openUserModal());
+        usersTableBody.addEventListener('click', (e) => {
+            const actionButton = e.target.closest('.edit-user-btn, .delete-user-btn');
+            if (!actionButton) return;
+            const userId = e.target.closest('tr').dataset.userId;
+            const user = allUsersData.find(u => u.id === userId);
+            if (actionButton.classList.contains('edit-user-btn')) {
+                openUserModal(user);
+            } else if (actionButton.classList.contains('delete-user-btn')) {
+                openConfirmModal(`Tem certeza que deseja excluir o usuário "${user.investidor || user.email}"?`, async () => {
+                    const { error } = await sb.from('dUsuariosEmail').delete().eq('id', userId);
+                    if (error) { showNotification(`Erro: ${error.message}`, 'error'); } 
+                    else { showNotification('Usuário excluído com sucesso!'); await loadAllData(); }
+                });
+            }
+        });
+        function openUserModal(user = null) {
+            userForm.reset();
+            if (user) {
+                userModalTitle.textContent = 'Editar Usuário';
+                document.getElementById('user-id').value = user.id;
+                document.getElementById('user-investidor').value = user.investidor || '';
+                document.getElementById('user-anima').value = user.usuarioAnima || '';
+                document.getElementById('user-email').value = user.email || '';
+            } else { userModalTitle.textContent = 'Adicionar Novo Usuário'; }
+            userModal.style.display = 'block';
+        }
+        function closeUserModal() {
+            const modalContent = userModal.querySelector('.modal-content');
+            modalContent.style.animation = 'slideDown 0.4s forwards';
+            setTimeout(() => { userModal.style.display = 'none'; modalContent.style.animation = 'slideUp 0.4s'; }, 300);
+        }
+        userModal.querySelector('.close-btn').addEventListener('click', closeUserModal);
+        userForm.addEventListener('submit', async(e) => {
+            e.preventDefault();
+            const id = document.getElementById('user-id').value;
+            const userData = {
+                investidor: document.getElementById('user-investidor').value.trim(),
+                usuarioAnima: document.getElementById('user-anima').value.trim(),
+                email: document.getElementById('user-email').value.trim(),
+            };
+            const response = id ? await sb.from('dUsuariosEmail').update(userData).eq('id', id) : await sb.from('dUsuariosEmail').insert([userData]);
+            if (response.error) { showNotification(`Erro: ${response.error.message}`, 'error'); } 
+            else { showNotification(`Usuário ${id ? 'atualizado' : 'salvo'} com sucesso!`); closeUserModal(); await loadAllData(); }
+        });
+        function openConfirmModal(message, onConfirm) {
+            confirmMessage.textContent = message;
+            confirmCallback = onConfirm;
+            confirmModal.style.display = 'block';
+        }
+        function closeConfirmModal() { confirmModal.style.display = 'none'; confirmCallback = null; }
+        confirmOkBtn.addEventListener('click', () => { if (confirmCallback) confirmCallback(); closeConfirmModal(); });
+        confirmCancelBtn.addEventListener('click', closeConfirmModal);
+        window.onclick = (event) => { if (event.target == userModal) closeUserModal(); if(event.target == confirmModal) closeConfirmModal(); };
+
+        // --- UI & THEME LOGIC ---
+        function showPage(pageId) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            const activePage = document.getElementById(`${pageId}-page`);
+            if (activePage) activePage.classList.add('active');
+            navLinks.forEach(link => link.classList.toggle('active', link.dataset.page === pageId));
+        }
+        navLinks.forEach(link => { link.addEventListener('click', (e) => { e.preventDefault(); showPage(link.dataset.page); }); });
+        function updateParticlesTheme(theme) {
+            if (window.pJSDom && window.pJSDom[0] && window.pJSDom[0].pJS) {
+                const pJS = window.pJSDom[0].pJS;
+                const color = theme === 'light' ? '#3B82F6' : '#00f5a0';
+                pJS.particles.color.value = color;
+                pJS.particles.line_linked.color = color;
+                pJS.fn.particlesDraw();
+            }
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+            const newTheme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
+            localStorage.setItem('theme', newTheme);
+            updateParticlesTheme(newTheme);
+        });
+        function applyInitialTheme() {
+            const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            if (savedTheme === 'light') document.body.classList.add('light-theme');
+            else document.body.classList.remove('light-theme');
+        }
+        sidebarToggle.addEventListener('click', () => { appLayout.classList.toggle('sidebar-collapsed'); });
+        
+        // --- ANIMATIONS ---
+        const aiCanvas = document.getElementById('ai-animation-canvas');
+        if (aiCanvas) {
+            const ctx = aiCanvas.getContext('2d');
+            let particles = []; const numParticles = 30;
+            function resizeCanvas() { aiCanvas.width = aiCanvas.offsetWidth; aiCanvas.height = aiCanvas.offsetHeight; }
+            class Particle { constructor() { this.x = Math.random()*aiCanvas.width; this.y = Math.random()*aiCanvas.height; this.vx = Math.random()*1-0.5; this.vy = Math.random()*1-0.5; this.radius = 1.5; } draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fillStyle = 'rgba(0, 245, 160, 0.7)'; ctx.fill(); } update() { this.x += this.vx; this.y += this.vy; if (this.x<0||this.x>aiCanvas.width) this.vx*=-1; if (this.y<0||this.y>aiCanvas.height) this.vy*=-1; } }
+            function createParticles() { particles = []; for (let i=0; i<numParticles; i++) { particles.push(new Particle()); } }
+            function connectParticles() { for (let i=0; i<numParticles; i++) { for (let j=i+1; j<numParticles; j++) { const dist = Math.sqrt((particles[i].x-particles[j].x)**2 + (particles[i].y-particles[j].y)**2); if (dist < 80) { ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.strokeStyle = `rgba(0, 245, 160, ${1-dist/80})`; ctx.lineWidth=0.5; ctx.stroke(); } } } }
+            function animate() { ctx.clearRect(0, 0, aiCanvas.width, aiCanvas.height); particles.forEach(p => { p.update(); p.draw(); }); connectParticles(); requestAnimationFrame(animate); }
+            window.addEventListener('resize', () => { resizeCanvas(); createParticles(); });
+            resizeCanvas(); createParticles(); animate();
+        }
+        particlesJS('particles-js',{ "particles": { "number": { "value": 60, "density": { "enable": true, "value_area": 800 } }, "color": { "value": "#00f5a0" }, "shape": { "type": "circle" }, "opacity": { "value": 0.5, "random": true, "anim": { "enable": true, "speed": 1, "opacity_min": 0.1, "sync": false } }, "size": { "value": 3, "random": true }, "line_linked": { "enable": true, "distance": 150, "color": "#00f5a0", "opacity": 0.2, "width": 1 }, "move": { "enable": true, "speed": 2, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false } }, "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": true, "mode": "grab" }, "onclick": { "enable": false }, "resize": true }, "modes": { "grab": { "distance": 140, "line_linked": { "opacity": 0.5 } } } }, "retina_detect": true });
+        
+        // --- INITIALIZATION ---
+        applyInitialTheme();
+        const initialTheme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
+        setTimeout(() => updateParticlesTheme(initialTheme), 500);
+        showPage('whatsapp');
+        loadAllData();
+    });
+    </script>
+</body>
+</html>
+
