@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         :root {
@@ -200,72 +201,39 @@
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; align-items: end; }
         .input-group { position: relative; }
         .input-group label { display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; }
-        .input-group input { width: 100%; padding: 12px 15px; font-size: 0.95rem; background-color: var(--background); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-        .input-group input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 245, 160, 0.2); }
-        
-        /* --- CORREÇÃO DO ÍCONE DO CALENDÁRIO --- */
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(1);
-            cursor: pointer;
+        .input-group input { 
+            width: 100%; padding: 12px 15px; font-size: 0.95rem; 
+            background-color: var(--background); border: 1px solid var(--border); 
+            border-radius: 8px; color: var(--text-primary); 
+            transition: border-color 0.2s ease, box-shadow 0.2s ease; 
         }
+        .input-group input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 245, 160, 0.2); }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
+        body.light-theme input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4); }
         
         /* --- CUSTOM SELECT --- */
         .custom-select-wrapper { position: relative; }
         .custom-select-trigger {
-            width: 100%;
-            padding: 12px 15px;
-            font-size: 0.95rem;
-            background-color: var(--background);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            user-select: none;
+            width: 100%; padding: 12px 15px; font-size: 0.95rem; background-color: var(--background);
+            border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center; user-select: none;
         }
          .custom-select-trigger::after {
-            content: '';
-            display: inline-block;
-            width: 0;
-            height: 0;
-            border-left: 5px solid transparent;
-            border-right: 5px solid transparent;
-            border-top: 5px solid var(--text-secondary);
-            transition: transform 0.2s ease;
+            content: ''; display: inline-block; width: 0; height: 0;
+            border-left: 5px solid transparent; border-right: 5px solid transparent;
+            border-top: 5px solid var(--text-secondary); transition: transform 0.2s ease;
         }
-        .custom-select-wrapper.open .custom-select-trigger::after {
-            transform: rotate(180deg);
-        }
+        .custom-select-wrapper.open .custom-select-trigger::after { transform: rotate(180deg); }
         .custom-options {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background-color: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            margin-top: 4px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 100;
+            display: none; position: absolute; top: 100%; left: 0; right: 0; background-color: var(--surface);
+            border: 1px solid var(--border); border-radius: 8px; margin-top: 4px; max-height: 200px;
+            overflow-y: auto; z-index: 100;
         }
         .custom-select-wrapper.open .custom-options { display: block; }
-        .custom-option {
-            padding: 10px 15px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .custom-option { padding: 10px 15px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
         .custom-option:hover { background-color: rgba(255, 255, 255, 0.05); }
-        .custom-option input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            accent-color: var(--primary);
-        }
+        .custom-option input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); }
+        .custom-option label { margin-bottom: 0; cursor: pointer; width: 100%; }
         
         /* --- NOTIFICAÇÕES --- */
         .notification-container { position: fixed; bottom: 20px; right: 20px; z-index: 1001; display: flex; flex-direction: column; gap: 10px; }
@@ -290,7 +258,7 @@
         #confirmModal .modal-content { max-width: 450px; text-align: center; }
         #confirm-message { font-size: 1.1rem; line-height: 1.6; }
 
-        /* --- PÁGINA DE USUÁRIOS & TABELAS GERAIS --- */
+        /* --- TABELAS GERAIS --- */
         .stats-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
         .stat-card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
         .stat-card h3 { font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -314,14 +282,37 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .titular-sub-row { font-size: 0.8rem; color: var(--text-secondary); padding-left: 10px; }
 
+        /* --- PÁGINA ANÁLISE GRÁFICA --- */
+        #analysis-page .charts-container { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+        #analysis-page .investor-block {
+            background-color: var(--surface);
+            padding: 1.5rem;
+            border-radius: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            border: 1px solid var(--border);
+        }
+        #analysis-page .investor-details { flex: 1; min-width: 250px; }
+        #analysis-page .investor-details h2 { font-size: 1.5rem; color: var(--primary); margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+        #analysis-page .detail-item { margin-bottom: 1rem; }
+        #analysis-page .detail-item span { display: block; }
+        #analysis-page .detail-label { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        #analysis-page .detail-value { font-size: 1.2rem; font-weight: bold; color: var(--text-primary); }
+        #analysis-page .chart-wrapper { flex: 2; min-width: 400px; height: 350px; }
+        #analysis-status { margin-bottom: 2rem; }
+        #analysis-status.status-error { background-color: #4d1a1a; border-color: var(--error); color: #FFCDD2; }
+        #analysis-status.status-success { background-color: #1a4d3e; border-color: var(--success); color: #C8E6C9; }
+        #analysis-status.status-info { background-color: #1e3a8a; border-color: var(--info); color: #dbeafe; }
+
+
         /* --- Light Theme Overrides --- */
         body.light-theme .btn.btn-icon:hover { background-color: #f3f4f6; }
         body.light-theme .table thead th { background: #f9fafb; }
         body.light-theme .table tbody tr:hover { background: #f3f4f6; }
         body.light-theme .btn-secondary { background-color: #e5e7eb; color: var(--text-primary); }
         body.light-theme .btn-secondary:hover { background-color: #d1d5db; }
-        body.light-theme input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0); }
-        body.light-theme .custom-option:hover { background-color: rgba(0, 0, 0, 0.03); }
+        body.light-theme .custom-option:hover { background-color: rgba(0, 0, 0, 0.05); }
 
     </style>
 </head>
@@ -331,7 +322,7 @@
 
     <div class="app-layout">
         <button id="sidebar-toggle">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0" 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -340,8 +331,9 @@
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                     <li><a data-page="whatsapp" class="active"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg><span>Conferência e Disparo</span></a></li>
-                     <li><a data-page="users"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0" 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Gerenciar Usuários</span></a></li>
+                     <li><a data-page="analysis" class="active"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg><span>Análise Gráfica</span></a></li>
+                     <li><a data-page="whatsapp"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg><span>Conferência e Disparo</span></a></li>
+                     <li><a data-page="users"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Gerenciar Usuários</span></a></li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
@@ -353,9 +345,25 @@
         </aside>
 
         <main class="main-content">
-            <!-- PÁGINA DE CONFERÊNCIA E DISPARO -->
-            <div id="whatsapp-page" class="page-content active">
+            
+            <!-- PÁGINA DE ANÁLISE GRÁFICA -->
+            <div id="analysis-page" class="page-content active">
                 <div class="container">
+                    <div class="header-controls">
+                        <h1 class="panel-title">Análise de Saldo Diário</h1>
+                    </div>
+                    <p class="page-subtitle">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                        <span>Análise da evolução de saldo de todos os investidores nos últimos 30 dias.</span>
+                    </p>
+                    <div id="analysis-status" class="card" style="display: none;"></div>
+                    <div class="charts-container" id="charts-container"></div>
+                </div>
+            </div>
+
+            <!-- PÁGINA DE CONFERÊNCIA E DISPARO -->
+            <div id="whatsapp-page" class="page-content">
+                 <div class="container">
                     <div class="header-controls">
                         <h1 class="panel-title">Conferência e Disparo em Lote</h1>
                     </div>
@@ -370,8 +378,8 @@
                             1. Montar Lista de Envio
                         </h2>
                         <div class="form-grid">
-                             <div class="input-group" style="flex-grow: 2;">
-                                <label for="investor-selector">Investidores</label>
+                            <div class="input-group" style="flex-grow: 2;">
+                                <label for="investor-selector">Investidores (Ctrl+Clique para múltiplos)</label>
                                 <div class="custom-select-wrapper" id="investor-selector-wrapper">
                                     <div class="custom-select-trigger">
                                         <span>Selecione...</span>
@@ -411,7 +419,7 @@
             
             <!-- PÁGINA DE GERENCIAMENTO DE USUÁRIOS -->
             <div id="users-page" class="page-content">
-                <div class="container">
+                 <div class="container">
                     <div class="header-controls">
                         <h1 class="panel-title">Gerenciar Usuários</h1>
                         <button id="add-user-btn" class="btn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Adicionar Usuário</button>
@@ -465,18 +473,14 @@
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         
-        // --- CONFIGURAÇÃO SUPABASE ---
+        // --- CONFIGURAÇÃO SUPABASE E N8N ---
         const SUPABASE_URL = 'https://supabase.infodash.com.br';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzE1MDUwODAwLAogICJleHAiOiAxODcyODE3MjAwCn0.BAmp3D2UEBQIUlhNGp5Q7sDMN3QLRyib7aztmMgH-_c';
-        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            db: { schema: 'dbfirma_capital' }
-        });
-
-        // --- CONFIGURAÇÃO N8N ---
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { db: { schema: 'dbfirma_capital' } });
         const N8N_CHECK_WEBHOOK_URL = 'https://webhook.infodash.com.br/webhook/dc26f840-eccc-435e-8c63-3c34a44a9ee7';
         const N8N_SEND_ALL_WEBHOOK_URL = 'https://webhook.infodash.com.br/webhook/db24508d-15d9-4854-838f-2f319ba0f21d';
-
-
+        const N8N_ANALYSIS_WEBHOOK_URL = 'https://webhook.infodash.com.br/webhook/e6e23f23-4387-41cc-9bd3-cdee3de6ffb8';
+        
         // --- STATE ---
         let allUsersData = [];
         let investorsMap = new Map();
@@ -491,7 +495,7 @@
         const navLinks = document.querySelectorAll('.sidebar-nav a');
         const notificationContainer = document.getElementById('notification-container');
         
-        // --- WhatsApp Page Elements ---
+        // --- Conferência Page Elements ---
         const customSelectWrapper = document.getElementById('investor-selector-wrapper');
         const customSelectTrigger = customSelectWrapper.querySelector('.custom-select-trigger');
         const customOptions = customSelectWrapper.querySelector('.custom-options');
@@ -507,6 +511,10 @@
         const totalUsersStat = document.getElementById('total-users-stat');
         const totalInvestorsStat = document.getElementById('total-investors-stat');
 
+        // --- Analysis Page Elements ---
+        const analysisStatusDiv = document.getElementById('analysis-status');
+        const analysisChartsContainer = document.getElementById('charts-container');
+
         // --- Modal Elements ---
         const userModal = document.getElementById('user-modal');
         const userModalTitle = document.getElementById('user-modal-title');
@@ -517,7 +525,7 @@
         const confirmMessage = document.getElementById('confirm-message');
         
         // --- Helper Functions ---
-        const money = (v) => (v != null ? parseFloat(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'N/A');
+        const money = (val) => val == null ? 'N/A' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
         function showNotification(message, type = 'success') {
             const toast = document.createElement('div');
@@ -563,7 +571,8 @@
                 const optionDiv = document.createElement('div');
                 optionDiv.className = 'custom-option';
                 optionDiv.dataset.value = name;
-                optionDiv.innerHTML = `<input type="checkbox" id="investor-${name.replace(/\s/g, '')}"> <label for="investor-${name.replace(/\s/g, '')}">${name}</label>`;
+                const safeId = `investor-${name.replace(/[^a-zA-Z0-9]/g, '')}`;
+                optionDiv.innerHTML = `<input type="checkbox" id="${safeId}"> <label for="${safeId}">${name}</label>`;
                 customOptions.appendChild(optionDiv);
             });
         }
@@ -598,42 +607,24 @@
         
         async function fetchInvestorBalancesFromN8N(investorName, startDate, endDate) {
             const investorData = batchList.get(investorName);
-
             try {
                 const response = await fetch(N8N_CHECK_WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        usuario: investorName,
-                        dataInicio: startDate,
-                        dataFim: endDate
-                    })
+                    body: JSON.stringify({ usuario: investorName, dataInicio: startDate, dataFim: endDate })
                 });
-
                 if (!response.ok) throw new Error(`Servidor n8n respondeu com status: ${response.status}`);
-                
                 const result = await response.json();
                 const accountsData = Array.isArray(result) ? result.map(r => r.json) : [result.json || result];
-
-                if (!accountsData || accountsData.length === 0 || accountsData[0].TITULAR === undefined) {
-                     throw new Error('A resposta do n8n está vazia ou em formato inesperado.');
-                }
-                
+                if (!accountsData || accountsData.length === 0 || accountsData[0].TITULAR === undefined) throw new Error('A resposta do n8n está vazia ou em formato inesperado.');
                 if (accountsData[0].error) throw new Error(accountsData[0].error);
-
                 investorData.status = 'loaded';
-                investorData.accounts = accountsData.map(acc => ({
-                    titular: acc.TITULAR,
-                    saldoAnterior: acc.saldoAnterior,
-                    saldoAtual: acc.saldoAtual
-                }));
-
+                investorData.accounts = accountsData.map(acc => ({ titular: acc.TITULAR, saldoAnterior: acc.saldoAnterior, saldoAtual: acc.saldoAtual }));
             } catch (error) {
                 investorData.status = 'error';
                 investorData.errorMsg = error.message;
                 showNotification(`Erro ao buscar dados para ${investorName} via n8n.`, 'error');
             }
-            
             renderBatchTable();
         }
 
@@ -645,7 +636,7 @@
                 return;
             }
             
-            const hasLoadedInvestors = Array.from(batchList.values()).some(d => d.status === 'loaded');
+            const hasLoadedInvestors = Array.from(batchList.values()).some(data => data.status === 'loaded');
             sendAllBtn.disabled = !hasLoadedInvestors;
             
             batchList.forEach((data, name) => {
@@ -653,25 +644,14 @@
                 if (data.accounts.length > 0) {
                     data.accounts.forEach((account, index) => {
                          const isFirstRow = index === 0;
-                         let statusHtml = '';
+                         let statusText = '';
                          switch (data.status) {
-                            case 'loaded': statusHtml = `<td style="color: var(--success);">Pronto</td>`; break;
-                            case 'sent': statusHtml = `<td style="color: var(--info);">Enviado</td>`; break;
-                            case 'send-error': statusHtml = `<td style="color: var(--error);" title="${data.errorMsg || 'Erro no envio'}">Erro no Envio</td>`; break;
-                            default: statusHtml = `<td>-</td>`
+                             case 'loaded': statusText = `<span style="color: var(--success);">Pronto</span>`; break;
+                             case 'sent': statusText = `<span style="color: var(--info);">Enviado</span>`; break;
+                             case 'send-error': statusText = `<span style="color: var(--error);">Erro no Envio</span>`; break;
+                             default: statusText = data.status;
                          }
-                         rowHtml += `
-                            <tr data-investor-name="${name}">
-                                <td>
-                                    ${isFirstRow ? name : ''}
-                                    <div class="titular-sub-row">${account.titular || 'Conta Principal'}</div>
-                                </td>
-                                <td>${money(account.saldoAnterior)}</td>
-                                <td>${money(account.saldoAtual)}</td>
-                                <td>${isFirstRow ? statusHtml : ''}</td>
-                                <td>${isFirstRow ? '<button class="btn btn-danger remove-investor-btn">Remover</button>' : ''}</td>
-                            </tr>
-                        `;
+                         rowHtml += `<tr data-investor-name="${name}"><td>${isFirstRow ? name : ''}<div class="titular-sub-row">${account.titular || 'Conta Principal'}</div></td><td>${money(account.saldoAnterior)}</td><td>${money(account.saldoAtual)}</td><td>${statusText}</td><td class="table-actions">${isFirstRow ? '<button class="btn btn-danger remove-investor-btn">Remover</button>' : ''}</td></tr>`;
                     });
                 } else {
                      let statusHtml = '';
@@ -682,17 +662,7 @@
                          case 'send-error': statusHtml = `<td style="color: var(--error);" title="${data.errorMsg || 'Erro no envio'}">Erro no Envio</td>`; break;
                          default: statusHtml = `<td>-</td>`
                      }
-                      rowHtml = `
-                        <tr data-investor-name="${name}">
-                            <td>${name}</td>
-                            <td>...</td>
-                            <td>...</td>
-                            ${statusHtml}
-                            <td class="table-actions">
-                                <button class="btn btn-danger remove-investor-btn">Remover</button>
-                            </td>
-                        </tr>
-                    `;
+                      rowHtml = `<tr data-investor-name="${name}"><td>${name}</td><td>...</td><td>...</td>${statusHtml}<td class="table-actions"><button class="btn btn-danger remove-investor-btn">Remover</button></td></tr>`;
                 }
                  batchTableBody.innerHTML += rowHtml;
             });
@@ -709,66 +679,42 @@
         sendAllBtn.addEventListener('click', async () => {
             const startDate = startDateInput.value;
             const endDate = endDateInput.value;
-
             if (!startDate || !endDate) {
                 showNotification('As datas de início e fim devem estar preenchidas para o disparo.', 'error');
                 return;
             }
-
             const investorsToSend = Array.from(batchList.values()).filter(data => data.status === 'loaded');
-            
             if (investorsToSend.length === 0) {
                 showNotification('Nenhum investidor com dados carregados para disparar.', 'info');
                 return;
             }
-
             sendAllBtn.disabled = true;
-            sendAllBtn.innerHTML = '<div class="loading-spinner"></div> Enviando...';
-
+            sendAllBtn.innerHTML = '<div class="loading-spinner" style="border-top-color: #0A0F1A;"></div> Enviando...';
             let successCount = 0;
             for (const investorData of investorsToSend) {
                 try {
-                    const payload = {
-                        investidor: investorData.name,
-                        dataInicio: startDate,
-                        dataFim: endDate
-                    };
-
+                    const payload = { investidor: investorData.name, dataInicio: startDate, dataFim: endDate };
                     const response = await fetch(N8N_SEND_ALL_WEBHOOK_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
                     });
-
                     if (response.ok) {
                         successCount++;
                         investorData.status = 'sent';
-                    } else {
-                        throw new Error(`Status ${response.status}`);
-                    }
+                    } else { throw new Error(`Status ${response.status}`); }
                 } catch (error) {
                      showNotification(`Erro ao enviar para ${investorData.name}: ${error.message}`, 'error');
                      investorData.status = 'send-error';
                 }
-                 renderBatchTable();
+                renderBatchTable();
             }
-            
             showNotification(`${successCount} de ${investorsToSend.length} webhooks enviados com sucesso!`, 'success');
             sendAllBtn.disabled = false;
             sendAllBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Enviar Extratos por E-mail';
         });
 
         // --- Custom Select Logic ---
-        customSelectTrigger.addEventListener('click', () => {
-            customSelectWrapper.classList.toggle('open');
-        });
-
-        window.addEventListener('click', (e) => {
-            if (!customSelectWrapper.contains(e.target)) {
-                customSelectWrapper.classList.remove('open');
-            }
-        });
-
+        customSelectTrigger.addEventListener('click', () => { customSelectWrapper.classList.toggle('open'); });
+        window.addEventListener('click', (e) => { if (!customSelectWrapper.contains(e.target)) { customSelectWrapper.classList.remove('open'); } });
         customOptions.addEventListener('change', () => {
             const selectedCount = customOptions.querySelectorAll('input[type="checkbox"]:checked').length;
             if (selectedCount === 0) {
@@ -781,7 +727,7 @@
             }
         });
 
-        // --- USERS PAGE LOGIC & MODALS (same as before) ---
+        // --- Users Page Logic & Modals ---
         function renderUsersPage() {
             if(!usersTableBody) return;
             usersTableBody.innerHTML = '';
@@ -853,14 +799,126 @@
         confirmCancelBtn.addEventListener('click', closeConfirmModal);
         window.onclick = (event) => { if (event.target == userModal) closeUserModal(); if(event.target == confirmModal) closeConfirmModal(); };
 
+        // --- Analysis Page Logic ---
+        function setAnalysisStatus(message, type = 'info') {
+            analysisStatusDiv.style.display = 'block';
+            analysisStatusDiv.textContent = message;
+            analysisStatusDiv.className = `card status-${type}`;
+        }
+        
+        function renderInvestorBlock(investorData) {
+            if (!investorData || !investorData.investidor || !Array.isArray(investorData.dias)) return;
+            const block = document.createElement('div');
+            block.className = 'investor-block';
+
+            const saldoInicial = investorData.dias.length > 0 ? investorData.dias[0].saldo_anterior : 'N/A';
+            const saldoFinal = investorData.dias.length > 0 ? investorData.dias[investorData.dias.length - 1].saldo_atual : 'N/A';
+            const usuariosAnima = investorData.titulares ? [...investorData.titulares].join(', ') : 'N/A';
+
+            const detailsPanel = document.createElement('div');
+            detailsPanel.className = 'investor-details';
+            detailsPanel.innerHTML = `
+                <h2>${investorData.investidor}</h2>
+                <div class="detail-item">
+                    <span class="detail-label">Usuários Anima Vinculados</span>
+                    <span class="detail-value" style="font-size: 1rem; font-weight: normal;">${usuariosAnima}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Saldo Inicial no Período</span>
+                    <span class="detail-value">${money(saldoInicial)}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Saldo Final no Período</span>
+                    <span class="detail-value">${money(saldoFinal)}</span>
+                </div>
+            `;
+            
+            const chartWrapper = document.createElement('div');
+            chartWrapper.className = 'chart-wrapper';
+            const canvas = document.createElement('canvas');
+            chartWrapper.appendChild(canvas);
+
+            block.appendChild(detailsPanel);
+            block.appendChild(chartWrapper);
+            analysisChartsContainer.appendChild(block);
+
+            const labels = investorData.dias.map(d => new Date(d.DATA).toLocaleDateString('pt-BR', {timeZone: 'UTC'}));
+            const dataPoints = investorData.dias.map(d => d.saldo_atual);
+
+            new Chart(canvas, {
+                type: 'line',
+                data: { labels, datasets: [{ label: 'Saldo Atual', data: dataPoints, borderColor: '#00F5A0', backgroundColor: 'rgba(0, 245, 160, 0.1)', fill: true, tension: 0.2 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { ticks: { color: '#8B949E', callback: (value) => money(value) }, grid: { color: 'rgba(139, 148, 158, 0.2)' } },
+                        x: { ticks: { color: '#8B949E' }, grid: { color: 'rgba(139, 148, 158, 0.2)' } }
+                    }
+                }
+            });
+        }
+        function groupDataForCharts(flatData) {
+            const grouped = {};
+            flatData.forEach(row => {
+                const investorName = row.investidor;
+                if (!grouped[investorName]) {
+                    grouped[investorName] = { investidor: investorName, dias: [], titulares: new Set() };
+                }
+                grouped[investorName].dias.push(row);
+                if (row.TITULAR) { grouped[investorName].titulares.add(row.TITULAR); }
+            });
+            return Object.values(grouped);
+        }
+        
+        async function loadAnalysisCharts() {
+            analysisChartsContainer.innerHTML = '';
+            setAnalysisStatus('Carregando dados dos últimos 30 dias...', 'info');
+
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(endDate.getDate() - 30);
+            const formatDate = (date) => date.toISOString().split('T')[0];
+            const dataInicio = formatDate(startDate);
+            const dataFim = formatDate(endDate);
+
+            try {
+                const payload = { dataInicio, dataFim };
+                const response = await fetch(N8N_ANALYSIS_WEBHOOK_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error(`O servidor n8n respondeu com o status: ${response.status}`);
+                const rawResult = await response.json();
+                
+                let flatData = [];
+                if (Array.isArray(rawResult) && rawResult.length > 0 && rawResult[0].json) { flatData = rawResult.map(item => item.json); } 
+                else if (Array.isArray(rawResult)) { flatData = rawResult; }
+
+                if (flatData.length === 0) { throw new Error("A resposta do n8n está vazia ou em formato inesperado após o processamento."); }
+                
+                const chartReadyData = groupDataForCharts(flatData);
+                chartReadyData.forEach(renderInvestorBlock);
+                setAnalysisStatus(`Gráficos gerados com sucesso para ${chartReadyData.length} investidor(es).`, 'success');
+            } catch (error) {
+                setAnalysisStatus(`ERRO: ${error.message}`, 'error');
+            }
+        }
+        
         // --- UI & THEME LOGIC ---
         function showPage(pageId) {
             document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
             const activePage = document.getElementById(`${pageId}-page`);
             if (activePage) activePage.classList.add('active');
             navLinks.forEach(link => link.classList.toggle('active', link.dataset.page === pageId));
+            if (pageId === 'users' && allUsersData.length > 0) {
+                 renderUsersPage();
+            }
+            if(pageId === 'analysis'){
+                loadAnalysisCharts();
+            }
         }
         navLinks.forEach(link => { link.addEventListener('click', (e) => { e.preventDefault(); showPage(link.dataset.page); }); });
+        
         function updateParticlesTheme(theme) {
             if (window.pJSDom && window.pJSDom[0] && window.pJSDom[0].pJS) {
                 const pJS = window.pJSDom[0].pJS;
@@ -902,7 +960,7 @@
         applyInitialTheme();
         const initialTheme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
         setTimeout(() => updateParticlesTheme(initialTheme), 500);
-        showPage('whatsapp');
+        showPage('analysis');
         loadAllData();
     });
     </script>
