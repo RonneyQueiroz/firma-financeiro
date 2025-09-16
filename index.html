@@ -305,6 +305,26 @@
         #analysis-status.status-success { background-color: #1a4d3e; border-color: var(--success); color: #C8E6C9; }
         #analysis-status.status-info { background-color: #1e3a8a; border-color: var(--info); color: #dbeafe; }
 
+        /* --- BOTÕES DE PERÍODO --- */
+        .date-presets {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: flex-end;
+        }
+        .btn-preset {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            background-color: var(--surface);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        .btn-preset.active {
+            background-color: var(--primary);
+            color: #0A0F1A;
+            border-color: var(--primary);
+        }
+
 
         /* --- Light Theme Overrides --- */
         body.light-theme .btn.btn-icon:hover { background-color: #f3f4f6; }
@@ -377,6 +397,13 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m8 17 4 4 4-4"/></svg>
                             1. Montar Lista de Envio
                         </h2>
+                        
+                        <div class="date-presets">
+                            <button class="btn btn-preset" id="btn-prev-month">Mês Anterior</button>
+                            <button class="btn btn-preset" id="btn-last-30">Últimos 30 dias</button>
+                            <button class="btn btn-preset" id="btn-last-7">Últimos 7 dias</button>
+                        </div>
+
                         <div class="form-grid">
                             <div class="input-group" style="flex-grow: 2;">
                                 <label for="investor-selector">Investidores (Ctrl+Clique para múltiplos)</label>
@@ -400,7 +427,7 @@
                             <table class="table" id="batch-table">
                                 <thead>
                                     <tr>
-                                        <th>Investidor</th>
+                                        <th>Investidor / Conta Anima</th>
                                         <th>Saldo Anterior</th>
                                         <th>Saldo Atual</th>
                                         <th>Status</th>
@@ -504,6 +531,7 @@
         const addInvestorBtn = document.getElementById('add-investor-btn');
         const batchTableBody = document.getElementById('batch-table-body');
         const sendAllBtn = document.getElementById('send-all-btn');
+        const datePresetButtons = document.querySelectorAll('.btn-preset');
 
         // --- Users Page Elements ---
         const addUserBtn = document.getElementById('add-user-btn');
@@ -535,6 +563,8 @@
             toast.addEventListener('animationend', (e) => { if (e.animationName === 'fadeOut') { toast.remove(); } });
         }
         
+        const formatDate = (date) => date.toISOString().split('T')[0];
+        
         // --- DATA LOADING & PROCESSING ---
         async function loadAllData() {
             const { data, error } = await sb
@@ -565,6 +595,7 @@
         }
         
         function populateInvestorSelector() {
+            if (!customOptions) return;
             customOptions.innerHTML = '';
             const sortedInvestors = [...investorsMap.keys()].sort();
             sortedInvestors.forEach(name => {
@@ -578,6 +609,37 @@
         }
 
         // --- BATCH PAGE LOGIC ---
+        datePresetButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                datePresetButtons.forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                const today = new Date();
+                let startDate, endDate;
+
+                switch(e.target.id) {
+                    case 'btn-last-7':
+                        endDate = new Date(today);
+                        startDate = new Date(today);
+                        startDate.setDate(today.getDate() - 7);
+                        break;
+                    case 'btn-last-30':
+                        endDate = new Date(today);
+                        startDate = new Date(today);
+                        startDate.setDate(today.getDate() - 30);
+                        break;
+                    case 'btn-prev-month':
+                        const firstDayCurrent = new Date(today.getFullYear(), today.getMonth(), 1);
+                        endDate = new Date(firstDayCurrent);
+                        endDate.setDate(endDate.getDate() - 1);
+                        startDate = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+                        break;
+                }
+                startDateInput.value = formatDate(startDate);
+                endDateInput.value = formatDate(endDate);
+            });
+        });
+
         addInvestorBtn.addEventListener('click', async () => {
             const selectedInvestors = Array.from(customOptions.querySelectorAll('input[type="checkbox"]:checked'))
                                          .map(cb => cb.closest('.custom-option').dataset.value);
@@ -589,41 +651,79 @@
                 return;
             }
             
+            // Abordagem sequencial para evitar race conditions
             for (const investorName of selectedInvestors) {
-                if (batchList.has(investorName)) {
-                    showNotification(`Investidor "${investorName}" já está na lista.`, 'info');
+                const accounts = investorsMap.get(investorName) || [];
+                const titulars = accounts.map(acc => acc.usuarioAnima).filter(Boolean);
+
+                if (titulars.length === 0) {
+                    showNotification(`Investidor "${investorName}" não possui contas 'usuário Anima' válidas.`, 'error');
                     continue;
                 }
-                 const investorData = { name: investorName, status: 'loading', accounts: [] };
-                 batchList.set(investorName, investorData);
+
+                for (const titular of titulars) {
+                    const uniqueId = `${investorName}::${titular}`;
+                     if (batchList.has(uniqueId)) {
+                        showNotification(`Conta "${titular}" já está na lista.`, 'info');
+                        continue;
+                    }
+                    const accountData = { 
+                        id: uniqueId,
+                        investorName: investorName,
+                        titular: titular, 
+                        status: 'loading',
+                        saldoAnterior: null,
+                        saldoAtual: null
+                    };
+                    batchList.set(uniqueId, accountData);
+                }
             }
             
             renderBatchTable();
             
-            for (const investorName of selectedInvestors) {
-                 await fetchInvestorBalancesFromN8N(investorName, startDate, endDate);
+            const accountsToFetch = Array.from(batchList.values()).filter(acc => acc.status === 'loading');
+
+            for (const account of accountsToFetch) {
+                 await fetchAccountBalanceFromN8N(account.id, startDate, endDate);
             }
         });
         
-        async function fetchInvestorBalancesFromN8N(investorName, startDate, endDate) {
-            const investorData = batchList.get(investorName);
+        async function fetchAccountBalanceFromN8N(uniqueId, startDate, endDate) {
+            const accountData = batchList.get(uniqueId);
+            if (!accountData) return;
+
             try {
+                const payload = { 
+                    anima: accountData.titular, 
+                    dataInicio: startDate, 
+                    dataFim: endDate 
+                };
+                
                 const response = await fetch(N8N_CHECK_WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario: investorName, dataInicio: startDate, dataFim: endDate })
+                    body: JSON.stringify(payload)
                 });
                 if (!response.ok) throw new Error(`Servidor n8n respondeu com status: ${response.status}`);
-                const result = await response.json();
-                const accountsData = Array.isArray(result) ? result.map(r => r.json) : [result.json || result];
-                if (!accountsData || accountsData.length === 0 || accountsData[0].TITULAR === undefined) throw new Error('A resposta do n8n está vazia ou em formato inesperado.');
-                if (accountsData[0].error) throw new Error(accountsData[0].error);
-                investorData.status = 'loaded';
-                investorData.accounts = accountsData.map(acc => ({ titular: acc.TITULAR, saldoAnterior: acc.saldoAnterior, saldoAtual: acc.saldoAtual }));
+                
+                const rawResult = await response.json();
+                
+                let resultData = Array.isArray(rawResult) ? rawResult[0]?.json || rawResult[0] : rawResult.json || rawResult;
+
+                if (!resultData) throw new Error('A resposta do n8n está vazia ou em formato inesperado.');
+                if (resultData.saldoAnterior === undefined || resultData.saldoAtual === undefined) {
+                     console.error("Dados recebidos do n8n:", resultData);
+                     throw new Error('A resposta do n8n não contém os campos de saldo esperados.');
+                }
+
+                accountData.status = 'loaded';
+                accountData.saldoAnterior = resultData.saldoAnterior;
+                accountData.saldoAtual = resultData.saldoAtual;
+
             } catch (error) {
-                investorData.status = 'error';
-                investorData.errorMsg = error.message;
-                showNotification(`Erro ao buscar dados para ${investorName} via n8n.`, 'error');
+                accountData.status = 'error';
+                accountData.errorMsg = error.message;
+                showNotification(`Erro ao buscar dados para a conta ${accountData.titular}.`, 'error');
             }
             renderBatchTable();
         }
@@ -639,39 +739,46 @@
             const hasLoadedInvestors = Array.from(batchList.values()).some(data => data.status === 'loaded');
             sendAllBtn.disabled = !hasLoadedInvestors;
             
-            batchList.forEach((data, name) => {
-                let rowHtml = '';
-                if (data.accounts.length > 0) {
-                    data.accounts.forEach((account, index) => {
-                         const isFirstRow = index === 0;
-                         let statusText = '';
-                         switch (data.status) {
-                             case 'loaded': statusText = `<span style="color: var(--success);">Pronto</span>`; break;
-                             case 'sent': statusText = `<span style="color: var(--info);">Enviado</span>`; break;
-                             case 'send-error': statusText = `<span style="color: var(--error);">Erro no Envio</span>`; break;
-                             default: statusText = data.status;
-                         }
-                         rowHtml += `<tr data-investor-name="${name}"><td>${isFirstRow ? name : ''}<div class="titular-sub-row">${account.titular || 'Conta Principal'}</div></td><td>${money(account.saldoAnterior)}</td><td>${money(account.saldoAtual)}</td><td>${statusText}</td><td class="table-actions">${isFirstRow ? '<button class="btn btn-danger remove-investor-btn">Remover</button>' : ''}</td></tr>`;
-                    });
-                } else {
-                     let statusHtml = '';
-                     switch (data.status) {
-                         case 'loading': statusHtml = `<td><div class="loading-spinner"></div></td>`; break;
-                         case 'error': statusHtml = `<td style="color: var(--error);" title="${data.errorMsg}">Erro</td>`; break;
-                         case 'sent': statusHtml = `<td><span style="color: var(--info);">Enviado</span></td>`; break;
-                         case 'send-error': statusHtml = `<td style="color: var(--error);" title="${data.errorMsg || 'Erro no envio'}">Erro no Envio</td>`; break;
-                         default: statusHtml = `<td>-</td>`
-                     }
-                      rowHtml = `<tr data-investor-name="${name}"><td>${name}</td><td>...</td><td>...</td>${statusHtml}<td class="table-actions"><button class="btn btn-danger remove-investor-btn">Remover</button></td></tr>`;
+            const renderedInvestors = new Set();
+            batchList.forEach((data, uniqueId) => {
+                const isFirstRowForInvestor = !renderedInvestors.has(data.investorName);
+                if(isFirstRowForInvestor) {
+                    renderedInvestors.add(data.investorName);
                 }
-                 batchTableBody.innerHTML += rowHtml;
+
+                let statusHtml = '';
+                switch (data.status) {
+                     case 'loading': statusHtml = `<div class="loading-spinner"></div>`; break;
+                     case 'loaded': statusHtml = `<span style="color: var(--success);">Pronto</span>`; break;
+                     case 'sent': statusHtml = `<span style="color: var(--info);">Enviado</span>`; break;
+                     case 'send-error': statusHtml = `<span style="color: var(--error);" title="${data.errorMsg || 'Erro no envio'}">Erro Envio</span>`; break;
+                     case 'error': statusHtml = `<span style="color: var(--error);" title="${data.errorMsg}">Erro</span>`; break;
+                     default: statusHtml = `-`
+                }
+                const row = document.createElement('tr');
+                row.dataset.uniqueId = uniqueId;
+                row.innerHTML = `
+                    <td>
+                        ${isFirstRowForInvestor ? data.investorName : ''}
+                        <div class="titular-sub-row">${data.titular}</div>
+                    </td>
+                    <td>${money(data.saldoAnterior)}</td>
+                    <td>${money(data.saldoAtual)}</td>
+                    <td>${statusHtml}</td>
+                    <td class="table-actions">${isFirstRowForInvestor ? `<button class="btn btn-danger remove-investor-btn" data-investor-name="${data.investorName}">Remover</button>` : ''}</td>
+                `;
+                batchTableBody.appendChild(row);
             });
         }
         
         batchTableBody.addEventListener('click', (e) => {
              if (e.target.classList.contains('remove-investor-btn')) {
-                const investorName = e.target.closest('tr').dataset.investorName;
-                batchList.delete(investorName);
+                const investorNameToRemove = e.target.dataset.investorName;
+                batchList.forEach((value, key) => {
+                    if (value.investorName === investorNameToRemove) {
+                        batchList.delete(key);
+                    }
+                });
                 renderBatchTable();
             }
         });
@@ -693,7 +800,8 @@
             let successCount = 0;
             for (const investorData of investorsToSend) {
                 try {
-                    const payload = { investidor: investorData.name, dataInicio: startDate, dataFim: endDate };
+                    // Note: This sends one webhook per investor, not per account. Adjust if needed.
+                    const payload = { investidor: investorData.investorName, dataInicio: startDate, dataFim: endDate };
                     const response = await fetch(N8N_SEND_ALL_WEBHOOK_URL, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
                     });
@@ -702,12 +810,12 @@
                         investorData.status = 'sent';
                     } else { throw new Error(`Status ${response.status}`); }
                 } catch (error) {
-                     showNotification(`Erro ao enviar para ${investorData.name}: ${error.message}`, 'error');
+                     showNotification(`Erro ao enviar para ${investorData.investorName}: ${error.message}`, 'error');
                      investorData.status = 'send-error';
                 }
-                renderBatchTable();
             }
-            showNotification(`${successCount} de ${investorsToSend.length} webhooks enviados com sucesso!`, 'success');
+            renderBatchTable(); // Re-render all at the end
+            showNotification(`${successCount} de ${investorsToSend.length} investidores enviados com sucesso!`, 'success');
             sendAllBtn.disabled = false;
             sendAllBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Enviar Extratos por E-mail';
         });
@@ -878,7 +986,6 @@
             const endDate = new Date();
             const startDate = new Date();
             startDate.setDate(endDate.getDate() - 30);
-            const formatDate = (date) => date.toISOString().split('T')[0];
             const dataInicio = formatDate(startDate);
             const dataFim = formatDate(endDate);
 
