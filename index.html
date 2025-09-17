@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Central de Controle n8n</title>
+    <title>Central de Controle - Firma Capital</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,27 +12,34 @@
     
     <style>
         :root {
-            --background: #030712;
-            --surface: #111827;
-            --primary: #00F5A0;
-            --primary-hover: #00D88F;
+            --background: #011f3a;
+            --surface: #003366;
+            --primary: #00a9e0;
+            --primary-hover: #008bc5;
+            --secondary-accent: #8cc63f;
+            --secondary-accent-shadow: rgba(140, 198, 63, 0.2);
             --text-primary: #F0F4F8;
-            --text-secondary: #8B949E;
-            --border: #212B3F;
+            --text-secondary: #88a2b8;
+            --border: #004a8d;
             --sidebar-width: 260px;
             --sidebar-width-collapsed: 80px;
             
-            --success: #00F5A0;
-            --error: #FF4D6D;
-            --info: #3B82F6;
+            --success: #8cc63f;
+            --error: #e53e3e;
+            --info: #00a9e0;
         }
 
         body.light-theme {
-            --background: #f3f4f6;
+            --background: #e5e7eb;
             --surface: #ffffff;
-            --text-primary: #111827;
-            --text-secondary: #6b7280;
-            --border: #e5e7eb;
+            --primary: #004a8d;
+            --primary-hover: #003366;
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --border: #cbd5e1;
+            --secondary-accent: #28a745;
+            --secondary-accent-shadow: rgba(40, 167, 69, 0.2);
+            --success: #28a745;
         }
 
         * {
@@ -100,17 +107,17 @@
             margin-left: 0;
         }
 
-        .sidebar-header { display: flex; align-items: center; gap: 15px; margin-bottom: 40px; transition: opacity 0.2s ease-in-out; }
-        #ai-animation-canvas { width: 40px; height: 40px; }
+        .sidebar-header { display: flex; align-items: center; justify-content: center; padding: 0 10px; margin-bottom: 40px; transition: opacity 0.2s ease-in-out; }
+        .sidebar-logo { width: 100%; max-height: 50px; object-fit: contain; flex-shrink: 0; }
         .sidebar-header h2 { font-size: 1.4rem; color: var(--text-primary); white-space: nowrap; }
         .sidebar-nav { flex-grow: 1; }
         .sidebar-nav ul { list-style: none; padding-left: 0; }
         .sidebar-nav li a { display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-radius: 8px; text-decoration: none; color: var(--text-secondary); font-weight: 500; transition: background-color 0.2s ease, color 0.2s ease; cursor: pointer; }
         .sidebar-nav li a span { white-space: nowrap; }
         .sidebar-nav li a svg { width: 22px; height: 22px; flex-shrink: 0; }
-        .sidebar-nav li a:hover { background-color: rgba(0, 245, 160, 0.1); color: var(--primary); }
-        .sidebar-nav li a.active { background-color: var(--primary); color: #0A0F1A; font-weight: 600; }
-        .sidebar-nav li a.active svg { stroke: #0A0F1A; }
+        .sidebar-nav li a:hover { background-color: rgba(140, 198, 63, 0.15); color: var(--secondary-accent); }
+        .sidebar-nav li a.active { background-color: var(--secondary-accent); color: var(--background); font-weight: 600; }
+        .sidebar-nav li a.active svg { stroke: var(--background); }
         .container { width: 100%; max-width: 1600px; margin: 0 auto; }
 
         .sidebar-footer {
@@ -129,7 +136,7 @@
             transform: translateY(-50%);
             width: 30px;
             height: 30px;
-            background-color: var(--primary);
+            background-color: var(--secondary-accent);
             border: 2px solid var(--background);
             border-radius: 50%;
             cursor: pointer;
@@ -154,7 +161,6 @@
         .sidebar-collapsed #sidebar-toggle {
             left: calc(var(--sidebar-width-collapsed) - 15px);
         }
-        .sidebar-collapsed .sidebar-header,
         .sidebar-collapsed .sidebar-nav li a span {
             opacity: 0;
             width: 0;
@@ -179,7 +185,7 @@
             gap: 8px;
         }
         .page-subtitle svg { width: 16px; height: 16px; stroke: var(--text-secondary); flex-shrink: 0; }
-        .btn { padding: 10px 18px; font-size: 0.9rem; font-weight: 600; color: #0A0F1A; background-color: var(--primary); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: background-color 0.2s ease; }
+        .btn { padding: 10px 18px; font-size: 0.9rem; font-weight: 600; color: white; background-color: var(--primary); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: background-color 0.2s ease; }
         .btn:hover { background-color: var(--primary-hover); }
         .btn:disabled { background-color: #555; cursor: not-allowed; }
         .btn.btn-danger { background-color: var(--error); color: white; }
@@ -197,7 +203,7 @@
         /* --- ELEMENTOS GERAIS --- */
         .card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 25px; margin-bottom: 30px; }
         .card h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
-        .card h2 svg { width: 22px; height: 22px; stroke: var(--primary); }
+        .card h2 svg { width: 22px; height: 22px; stroke: var(--secondary-accent); }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; align-items: end; }
         .input-group { position: relative; }
         .input-group label { display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; }
@@ -207,7 +213,7 @@
             border-radius: 8px; color: var(--text-primary); 
             transition: border-color 0.2s ease, box-shadow 0.2s ease; 
         }
-        .input-group input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 245, 160, 0.2); }
+        .input-group input:focus { outline: none; border-color: var(--secondary-accent); box-shadow: 0 0 0 3px var(--secondary-accent-shadow); }
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
         body.light-theme input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4); }
         
@@ -268,6 +274,36 @@
         .table { width: 100%; border-collapse: collapse; }
         .table thead th { background: #0A0F1A; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .5px; font-size: .75rem; padding: 12px 15px; text-align: left; white-space: nowrap;}
         .table td { padding: 14px 15px; border-bottom: 1px solid var(--border); font-size: .9rem; white-space: nowrap; }
+        .table td.highlight-col {
+            font-weight: 600;
+            background-color: rgba(140, 198, 63, 0.05); /* Usando a cor de destaque secundária com baixa opacidade */
+        }
+        body.light-theme .table td.highlight-col {
+            background-color: rgba(0, 74, 141, 0.05); /* Usando a cor primária para o tema claro */
+        }
+        .variation-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+        .variation-cell svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+        .variation-up { color: var(--success); }
+        .variation-down { color: var(--error); }
+        .variation-details {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+        .variation-percent {
+            font-size: 0.8rem;
+            font-weight: 500;
+            opacity: 0.8;
+        }
         .table tbody tr:last-child td { border-bottom: none; }
         .table tbody tr:hover { background: #1F2937; }
         .table-actions { display: flex; gap: 10px; }
@@ -282,28 +318,138 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .titular-sub-row { font-size: 0.8rem; color: var(--text-secondary); padding-left: 10px; }
 
-        /* --- PÁGINA ANÁLISE GRÁFICA --- */
-        #analysis-page .charts-container { display: grid; grid-template-columns: 1fr; gap: 2rem; }
-        #analysis-page .investor-block {
-            background-color: var(--surface);
-            padding: 1.5rem;
-            border-radius: 8px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 2rem;
-            border: 1px solid var(--border);
+        /* --- PÁGINA ANÁLISE GRÁFICA (NOVO LAYOUT) --- */
+        #analysis-page .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
         }
-        #analysis-page .investor-details { flex: 1; min-width: 250px; }
-        #analysis-page .investor-details h2 { font-size: 1.5rem; color: var(--primary); margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
-        #analysis-page .detail-item { margin-bottom: 1rem; }
-        #analysis-page .detail-item span { display: block; }
-        #analysis-page .detail-label { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-        #analysis-page .detail-value { font-size: 1.2rem; font-weight: bold; color: var(--text-primary); }
-        #analysis-page .chart-wrapper { flex: 2; min-width: 400px; height: 350px; }
+        .investor-card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            overflow: hidden;
+        }
+        .investor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        .card-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .card-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .latest-balance .balance-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .latest-balance .balance-date {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: -5px;
+        }
+        .chart-wrapper {
+            height: 100px;
+            margin-top: 20px;
+            opacity: 1;
+            transition: height 0.4s ease, opacity 0.4s ease;
+        }
+        .investor-card.expanded {
+            grid-column: 1 / -1;
+            cursor: default;
+        }
+        .investor-card.expanded:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        .investor-card.expanded .chart-wrapper {
+            height: 300px;
+        }
+
+        .card-variation {
+            text-align: right;
+        }
+        .card-variation .variation-cell {
+            justify-content: flex-end;
+            gap: 5px;
+        }
+        .card-variation .variation-cell svg {
+            width: 14px;
+            height: 14px;
+        }
+         .card-variation .variation-details {
+            line-height: 1.3;
+        }
+         .card-variation .variation-percent {
+             font-size: 0.75rem;
+         }
+
+
         #analysis-status { margin-bottom: 2rem; }
         #analysis-status.status-error { background-color: #4d1a1a; border-color: var(--error); color: #FFCDD2; }
         #analysis-status.status-success { background-color: #1a4d3e; border-color: var(--success); color: #C8E6C9; }
         #analysis-status.status-info { background-color: #1e3a8a; border-color: var(--info); color: #dbeafe; }
+
+        /* --- TELA DE LOGIN --- */
+        #login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--background);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            transition: opacity 0.5s ease;
+        }
+        .login-card {
+            background-color: var(--surface);
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .login-logo {
+            height: 50px;
+            margin-bottom: 20px;
+        }
+        .login-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+        #login-form .input-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        .login-btn {
+            width: 100%;
+            margin-top: 10px;
+        }
+        .login-error-message {
+            color: var(--error);
+            font-size: 0.9rem;
+            height: 20px;
+            margin-bottom: 10px;
+        }
 
         /* --- BOTÕES DE PERÍODO --- */
         .date-presets {
@@ -321,17 +467,17 @@
         }
         .btn-preset.active {
             background-color: var(--primary);
-            color: #0A0F1A;
+            color: white;
             border-color: var(--primary);
         }
 
 
         /* --- Light Theme Overrides --- */
-        body.light-theme .btn.btn-icon:hover { background-color: #f3f4f6; }
-        body.light-theme .table thead th { background: #f9fafb; }
-        body.light-theme .table tbody tr:hover { background: #f3f4f6; }
-        body.light-theme .btn-secondary { background-color: #e5e7eb; color: var(--text-primary); }
-        body.light-theme .btn-secondary:hover { background-color: #d1d5db; }
+        body.light-theme .btn.btn-icon:hover { background-color: #e2e8f0; }
+        body.light-theme .table thead th { background: #f8f9fa; }
+        body.light-theme .table tbody tr:hover { background: #f1f5f9; }
+        body.light-theme .btn-secondary { background-color: #e2e8f0; color: var(--text-primary); }
+        body.light-theme .btn-secondary:hover { background-color: #cbd5e1; }
         body.light-theme .custom-option:hover { background-color: rgba(0, 0, 0, 0.05); }
 
     </style>
@@ -340,20 +486,38 @@
 
     <div id="particles-js"></div>
 
-    <div class="app-layout">
+    <div id="login-screen">
+        <div class="login-card">
+            <img src="https://i.ibb.co/RkRnZJcf/logo-firma.png" alt="Firma Capital Logo" class="login-logo">
+            <p class="login-subtitle">Acesse a Central de Controle</p>
+            <form id="login-form">
+                <div class="input-group">
+                    <label for="username">Usuário</label>
+                    <input type="text" id="username" required value="firma">
+                </div>
+                <div class="input-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" required value="firma2025*">
+                </div>
+                <p id="login-error" class="login-error-message"></p>
+                <button type="submit" class="btn login-btn">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="app-layout" style="display: none;">
         <button id="sidebar-toggle">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
         <aside class="sidebar">
             <div class="sidebar-header">
-                <canvas id="ai-animation-canvas"></canvas>
-                <h2>Central de Controle</h2>
+                <img src="https://i.ibb.co/RkRnZJcf/logo-firma.png" alt="Firma Capital Logo" class="sidebar-logo">
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                     <li><a data-page="analysis" class="active"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg><span>Análise Gráfica</span></a></li>
-                     <li><a data-page="whatsapp"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg><span>Conferência e Disparo</span></a></li>
-                     <li><a data-page="users"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Gerenciar Usuários</span></a></li>
+                     <li><a data-page="analysis" class="active"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg><span>Análise</span></a></li>
+                     <li><a data-page="whatsapp"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg><span>Disparos</span></a></li>
+                     <li><a data-page="users"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Usuários</span></a></li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
@@ -430,6 +594,7 @@
                                         <th>Investidor / Conta Anima</th>
                                         <th>Saldo Anterior</th>
                                         <th>Saldo Atual</th>
+                                        <th>Variação (R$ / %)</th>
                                         <th>Status</th>
                                         <th>Ações</th>
                                     </tr>
@@ -517,6 +682,9 @@
         // --- DOM Elements ---
         const body = document.body;
         const appLayout = document.querySelector('.app-layout');
+        const loginScreen = document.getElementById('login-screen');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
         const sidebarToggle = document.getElementById('sidebar-toggle');
         const themeToggle = document.getElementById('theme-toggle');
         const navLinks = document.querySelectorAll('.sidebar-nav a');
@@ -542,6 +710,8 @@
         // --- Analysis Page Elements ---
         const analysisStatusDiv = document.getElementById('analysis-status');
         const analysisChartsContainer = document.getElementById('charts-container');
+        let analysisCharts = new Map();
+        let analysisFullData = new Map();
 
         // --- Modal Elements ---
         const userModal = document.getElementById('user-modal');
@@ -731,7 +901,7 @@
         function renderBatchTable() {
             batchTableBody.innerHTML = '';
             if (batchList.size === 0) {
-                batchTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Adicione investidores para conferir os saldos.</td></tr>';
+                batchTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Adicione investidores para conferir os saldos.</td></tr>';
                 sendAllBtn.disabled = true;
                 return;
             }
@@ -755,6 +925,41 @@
                      case 'error': statusHtml = `<span style="color: var(--error);" title="${data.errorMsg}">Erro</span>`; break;
                      default: statusHtml = `-`
                 }
+                
+                // --- Lógica de Variação ---
+                let variationHtml = '-';
+                const { saldoAnterior, saldoAtual } = data;
+
+                if (typeof saldoAnterior === 'number' && typeof saldoAtual === 'number') {
+                    const variacaoRS = saldoAtual - saldoAnterior;
+                    // De acordo com a regra de negócio do usuário, um número menor é melhor.
+                    const isImprovement = variacaoRS < 0; 
+                    const isWorsening = variacaoRS > 0;
+
+                    const variacaoPercent = saldoAnterior !== 0 ? (variacaoRS / Math.abs(saldoAnterior)) * 100 : 0;
+                    
+                    let icon = '';
+                    let variationClass = '';
+
+                    if (isImprovement) {
+                        variationClass = 'variation-up';
+                        icon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m18 11-6-6-6 6"/></svg>`;
+                    } else if (isWorsening) {
+                        variationClass = 'variation-down';
+                        icon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m6 13 6 6 6-6"/></svg>`;
+                    }
+
+                    variationHtml = `
+                        <div class="variation-cell ${variationClass}">
+                            ${icon}
+                            <div class="variation-details">
+                                <span>${money(variacaoRS * -1)}</span>
+                                <span class="variation-percent">${(variacaoPercent * -1).toFixed(2)}%</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 const row = document.createElement('tr');
                 row.dataset.uniqueId = uniqueId;
                 row.innerHTML = `
@@ -762,8 +967,9 @@
                         ${isFirstRowForInvestor ? data.investorName : ''}
                         <div class="titular-sub-row">${data.titular}</div>
                     </td>
-                    <td>${money(data.saldoAnterior)}</td>
-                    <td>${money(data.saldoAtual)}</td>
+                    <td>${money(data.saldoAnterior * -1)}</td>
+                    <td class="highlight-col">${money(data.saldoAtual * -1)}</td>
+                    <td>${variationHtml}</td>
                     <td>${statusHtml}</td>
                     <td class="table-actions">${isFirstRowForInvestor ? `<button class="btn btn-danger remove-investor-btn" data-investor-name="${data.investorName}">Remover</button>` : ''}</td>
                 `;
@@ -907,65 +1113,202 @@
         confirmCancelBtn.addEventListener('click', closeConfirmModal);
         window.onclick = (event) => { if (event.target == userModal) closeUserModal(); if(event.target == confirmModal) closeConfirmModal(); };
 
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = loginForm.querySelector('#username').value;
+            const password = loginForm.querySelector('#password').value;
+
+            if (username === 'firma' && password === 'firma2025*') {
+                loginScreen.style.opacity = '0';
+                setTimeout(() => {
+                    loginScreen.style.display = 'none';
+                    appLayout.style.display = 'flex';
+                }, 500); // Aguarda o fade-out
+            } else {
+                loginError.textContent = 'Usuário ou senha inválidos.';
+                loginForm.querySelector('#password').value = '';
+            }
+        });
+
         // --- Analysis Page Logic ---
         function setAnalysisStatus(message, type = 'info') {
             analysisStatusDiv.style.display = 'block';
             analysisStatusDiv.textContent = message;
             analysisStatusDiv.className = `card status-${type}`;
         }
+
+        function renderCardVariation(cardElement, dataSlice) {
+            const variationContainer = cardElement.querySelector('.card-variation');
+            if (!variationContainer || dataSlice.length < 2) {
+                if(variationContainer) variationContainer.innerHTML = '';
+                return;
+            };
+
+            const firstValue = dataSlice[0].saldo_atual;
+            const lastValue = dataSlice[dataSlice.length - 1].saldo_atual;
+            
+            const variacaoRS = lastValue - firstValue;
+            const isImprovement = variacaoRS < 0;
+            const isWorsening = variacaoRS > 0;
+            const variacaoPercent = firstValue !== 0 ? (variacaoRS / Math.abs(firstValue)) * 100 : 0;
+            
+            let icon = '';
+            let variationClass = '';
+            if (isImprovement) {
+                variationClass = 'variation-up';
+                icon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m18 11-6-6-6 6"/></svg>`;
+            } else if (isWorsening) {
+                variationClass = 'variation-down';
+                icon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m6 13 6 6 6-6"/></svg>`;
+            }
+
+            variationContainer.innerHTML = `
+                <div class="variation-cell ${variationClass}">
+                    <div class="variation-details">
+                        <span>${money(variacaoRS * -1)}</span>
+                        <span class="variation-percent">${(variacaoPercent * -1).toFixed(2)}%</span>
+                    </div>
+                    ${icon}
+                </div>
+            `;
+        }
+
+
+        function updateCardView(investorName, days) {
+            const chart = analysisCharts.get(investorName);
+            const fullData = analysisFullData.get(investorName);
+            const cardElement = document.querySelector(`.investor-card[data-investor-name="${investorName}"]`);
+            if (!chart || !fullData || !cardElement) return;
+
+            const dataSlice = fullData.slice(-days);
+            const labels = dataSlice.map(d => new Date(d.DATA).toLocaleDateString('pt-BR', {timeZone: 'UTC'}));
+            const dataPoints = dataSlice.map(d => d.saldo_atual * -1); // Correção: Invertendo o sinal dos valores
+            
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = dataPoints;
+
+            const isExpanded = days > 14;
+            chart.options.scales.x.ticks.display = isExpanded; 
+            chart.options.scales.y.display = isExpanded;
+
+            chart.update();
+            renderCardVariation(cardElement, dataSlice);
+        }
+
+        function handleCardClick(event) {
+            const clickedCard = event.currentTarget;
+            const investorName = clickedCard.dataset.investorName;
+            const isCurrentlyExpanded = clickedCard.classList.contains('expanded');
+
+            // Recolhe qualquer outro cartão que esteja expandido
+            document.querySelectorAll('.investor-card.expanded').forEach(card => {
+                if (card !== clickedCard) {
+                    card.classList.remove('expanded');
+                    updateCardView(card.dataset.investorName, 14);
+                }
+            });
+
+            // Expande ou recolhe o cartão clicado
+            clickedCard.classList.toggle('expanded');
+            
+            if (!isCurrentlyExpanded) {
+                updateCardView(investorName, 30); // Expande para 30 dias
+            } else {
+                updateCardView(investorName, 14); // Recolhe para 14 dias
+            }
+        }
         
-        function renderInvestorBlock(investorData) {
-            if (!investorData || !investorData.investidor || !Array.isArray(investorData.dias)) return;
-            const block = document.createElement('div');
-            block.className = 'investor-block';
+        function renderInvestorCard(investorData) {
+            if (!investorData || !investorData.investidor || !Array.isArray(investorData.dias) || investorData.dias.length === 0) return;
+            
+            investorData.dias.sort((a, b) => new Date(a.DATA) - new Date(b.DATA));
+            analysisFullData.set(investorData.investidor, investorData.dias);
+            
+            const lastDataPoint = investorData.dias[investorData.dias.length - 1];
+            const fourteenDayData = investorData.dias.slice(-14);
 
-            const saldoInicial = investorData.dias.length > 0 ? investorData.dias[0].saldo_anterior : 'N/A';
-            const saldoFinal = investorData.dias.length > 0 ? investorData.dias[investorData.dias.length - 1].saldo_atual : 'N/A';
-            const usuariosAnima = investorData.titulares ? [...investorData.titulares].join(', ') : 'N/A';
+            const card = document.createElement('div');
+            card.className = 'investor-card';
+            card.dataset.investorName = investorData.investidor;
 
-            const detailsPanel = document.createElement('div');
-            detailsPanel.className = 'investor-details';
-            detailsPanel.innerHTML = `
-                <h2>${investorData.investidor}</h2>
-                <div class="detail-item">
-                    <span class="detail-label">Usuários Anima Vinculados</span>
-                    <span class="detail-value" style="font-size: 1rem; font-weight: normal;">${usuariosAnima}</span>
+            card.innerHTML = `
+                <div class="card-header">
+                    <h3>${investorData.investidor}</h3>
                 </div>
-                <div class="detail-item">
-                    <span class="detail-label">Saldo Inicial no Período</span>
-                    <span class="detail-value">${money(saldoInicial)}</span>
+                <div class="card-summary">
+                     <div class="latest-balance">
+                        <span class="balance-value">${money(lastDataPoint.saldo_atual * -1)}</span>
+                        <span class="balance-date">Saldo em ${new Date(lastDataPoint.DATA).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</span>
+                    </div>
+                    <div class="card-variation"></div>
                 </div>
-                <div class="detail-item">
-                    <span class="detail-label">Saldo Final no Período</span>
-                    <span class="detail-value">${money(saldoFinal)}</span>
+                <div class="chart-wrapper">
+                    <canvas></canvas>
                 </div>
             `;
             
-            const chartWrapper = document.createElement('div');
-            chartWrapper.className = 'chart-wrapper';
-            const canvas = document.createElement('canvas');
-            chartWrapper.appendChild(canvas);
+            analysisChartsContainer.appendChild(card);
+            const canvas = card.querySelector('canvas');
 
-            block.appendChild(detailsPanel);
-            block.appendChild(chartWrapper);
-            analysisChartsContainer.appendChild(block);
+            const isLightTheme = document.body.classList.contains('light-theme');
+            const chartBorderColor = isLightTheme ? '#28a745' : '#8cc63f';
+            const chartBgColor = isLightTheme ? 'rgba(40, 167, 69, 0.1)' : 'rgba(140, 198, 63, 0.1)';
 
-            const labels = investorData.dias.map(d => new Date(d.DATA).toLocaleDateString('pt-BR', {timeZone: 'UTC'}));
-            const dataPoints = investorData.dias.map(d => d.saldo_atual);
-
-            new Chart(canvas, {
+            const chart = new Chart(canvas, {
                 type: 'line',
-                data: { labels, datasets: [{ label: 'Saldo Atual', data: dataPoints, borderColor: '#00F5A0', backgroundColor: 'rgba(0, 245, 160, 0.1)', fill: true, tension: 0.2 }] },
+                data: {
+                    labels: fourteenDayData.map(d => new Date(d.DATA).toLocaleDateString('pt-BR', {timeZone: 'UTC'})),
+                    datasets: [{
+                        label: 'Saldo Atual',
+                        data: fourteenDayData.map(d => d.saldo_atual * -1),
+                        borderColor: chartBorderColor,
+                        backgroundColor: chartBgColor,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: { 
+                        legend: { 
+                            display: true, 
+                            position: 'top',
+                            align: 'start',
+                            labels: {
+                                color: 'var(--text-secondary)',
+                                boxWidth: 12,
+                                padding: 15
+                            }
+                        }, 
+                        tooltip: { enabled: true } 
+                    },
                     scales: {
-                        y: { ticks: { color: '#8B949E', callback: (value) => money(value) }, grid: { color: 'rgba(139, 148, 158, 0.2)' } },
-                        x: { ticks: { color: '#8B949E' }, grid: { color: 'rgba(139, 148, 158, 0.2)' } }
+                        y: { 
+                            display: false, 
+                            grid: { color: 'rgba(139, 148, 158, 0.1)' }, 
+                            ticks: { 
+                                color: 'var(--text-secondary)',
+                                callback: (value) => money(value) 
+                            } 
+                        },
+                        x: { 
+                            display: true, 
+                            grid: { display: false }, 
+                            ticks: { 
+                                display: false,
+                                color: 'var(--text-secondary)'
+                            } 
+                        }
                     }
                 }
             });
+
+            analysisCharts.set(investorData.investidor, chart);
+            renderCardVariation(card, fourteenDayData);
+            card.addEventListener('click', handleCardClick);
         }
+
         function groupDataForCharts(flatData) {
             const grouped = {};
             flatData.forEach(row => {
@@ -981,6 +1324,8 @@
         
         async function loadAnalysisCharts() {
             analysisChartsContainer.innerHTML = '';
+            analysisCharts.clear();
+            analysisFullData.clear();
             setAnalysisStatus('Carregando dados dos últimos 30 dias...', 'info');
 
             const endDate = new Date();
@@ -1004,8 +1349,8 @@
                 if (flatData.length === 0) { throw new Error("A resposta do n8n está vazia ou em formato inesperado após o processamento."); }
                 
                 const chartReadyData = groupDataForCharts(flatData);
-                chartReadyData.forEach(renderInvestorBlock);
-                setAnalysisStatus(`Gráficos gerados com sucesso para ${chartReadyData.length} investidor(es).`, 'success');
+                chartReadyData.forEach(renderInvestorCard);
+                setAnalysisStatus(`Exibindo ${chartReadyData.length} investidor(es). Clique em um cartão para expandir.`, 'success');
             } catch (error) {
                 setAnalysisStatus(`ERRO: ${error.message}`, 'error');
             }
@@ -1029,7 +1374,7 @@
         function updateParticlesTheme(theme) {
             if (window.pJSDom && window.pJSDom[0] && window.pJSDom[0].pJS) {
                 const pJS = window.pJSDom[0].pJS;
-                const color = theme === 'light' ? '#3B82F6' : '#00f5a0';
+                const color = theme === 'light' ? '#004a8d' : '#8cc63f';
                 pJS.particles.color.value = color;
                 pJS.particles.line_linked.color = color;
                 pJS.fn.particlesDraw();
@@ -1040,28 +1385,35 @@
             const newTheme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
             localStorage.setItem('theme', newTheme);
             updateParticlesTheme(newTheme);
+            if (document.getElementById('analysis-page').classList.contains('active')) {
+                loadAnalysisCharts();
+            }
         });
         function applyInitialTheme() {
-            const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-            if (savedTheme === 'light') document.body.classList.add('light-theme');
-            else document.body.classList.remove('light-theme');
+            // Define o tema claro como padrão, independentemente das configurações do sistema ou do que estava salvo.
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+            } else {
+                document.body.classList.remove('light-theme');
+            }
         }
         sidebarToggle.addEventListener('click', () => { appLayout.classList.toggle('sidebar-collapsed'); });
         
         // --- ANIMATIONS ---
         const aiCanvas = document.getElementById('ai-animation-canvas');
         if (aiCanvas) {
-            const ctx = aiCanvas.getContext('2d');
+            const ctx = aiCanvas.getContext('d');
             let particles = []; const numParticles = 30;
             function resizeCanvas() { aiCanvas.width = aiCanvas.offsetWidth; aiCanvas.height = aiCanvas.offsetHeight; }
-            class Particle { constructor() { this.x = Math.random()*aiCanvas.width; this.y = Math.random()*aiCanvas.height; this.vx = Math.random()*1-0.5; this.vy = Math.random()*1-0.5; this.radius = 1.5; } draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fillStyle = 'rgba(0, 245, 160, 0.7)'; ctx.fill(); } update() { this.x += this.vx; this.y += this.vy; if (this.x<0||this.x>aiCanvas.width) this.vx*=-1; if (this.y<0||this.y>aiCanvas.height) this.vy*=-1; } }
+            class Particle { constructor() { this.x = Math.random()*aiCanvas.width; this.y = Math.random()*aiCanvas.height; this.vx = Math.random()*1-0.5; this.vy = Math.random()*1-0.5; this.radius = 1.5; } draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fillStyle = 'rgba(140, 198, 63, 0.7)'; ctx.fill(); } update() { this.x += this.vx; this.y += this.vy; if (this.x<0||this.x>aiCanvas.width) this.vx*=-1; if (this.y<0||this.y>aiCanvas.height) this.vy*=-1; } }
             function createParticles() { particles = []; for (let i=0; i<numParticles; i++) { particles.push(new Particle()); } }
-            function connectParticles() { for (let i=0; i<numParticles; i++) { for (let j=i+1; j<numParticles; j++) { const dist = Math.sqrt((particles[i].x-particles[j].x)**2 + (particles[i].y-particles[j].y)**2); if (dist < 80) { ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.strokeStyle = `rgba(0, 245, 160, ${1-dist/80})`; ctx.lineWidth=0.5; ctx.stroke(); } } } }
+            function connectParticles() { for (let i=0; i<numParticles; i++) { for (let j=i+1; j<numParticles; j++) { const dist = Math.sqrt((particles[i].x-particles[j].x)**2 + (particles[i].y-particles[j].y)**2); if (dist < 80) { ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.strokeStyle = `rgba(140, 198, 63, ${1-dist/80})`; ctx.lineWidth=0.5; ctx.stroke(); } } } }
             function animate() { ctx.clearRect(0, 0, aiCanvas.width, aiCanvas.height); particles.forEach(p => { p.update(); p.draw(); }); connectParticles(); requestAnimationFrame(animate); }
             window.addEventListener('resize', () => { resizeCanvas(); createParticles(); });
             resizeCanvas(); createParticles(); animate();
         }
-        particlesJS('particles-js',{ "particles": { "number": { "value": 60, "density": { "enable": true, "value_area": 800 } }, "color": { "value": "#00f5a0" }, "shape": { "type": "circle" }, "opacity": { "value": 0.5, "random": true, "anim": { "enable": true, "speed": 1, "opacity_min": 0.1, "sync": false } }, "size": { "value": 3, "random": true }, "line_linked": { "enable": true, "distance": 150, "color": "#00f5a0", "opacity": 0.2, "width": 1 }, "move": { "enable": true, "speed": 2, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false } }, "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": true, "mode": "grab" }, "onclick": { "enable": false }, "resize": true }, "modes": { "grab": { "distance": 140, "line_linked": { "opacity": 0.5 } } } }, "retina_detect": true });
+        particlesJS('particles-js',{ "particles": { "number": { "value": 60, "density": { "enable": true, "value_area": 800 } }, "color": { "value": "#8cc63f" }, "shape": { "type": "circle" }, "opacity": { "value": 0.5, "random": true, "anim": { "enable": true, "speed": 1, "opacity_min": 0.1, "sync": false } }, "size": { "value": 3, "random": true }, "line_linked": { "enable": true, "distance": 150, "color": "#8cc63f", "opacity": 0.2, "width": 1 }, "move": { "enable": true, "speed": 2, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false } }, "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": true, "mode": "grab" }, "onclick": { "enable": false }, "resize": true }, "modes": { "grab": { "distance": 140, "line_linked": { "opacity": 0.5 } } } }, "retina_detect": true });
         
         // --- INITIALIZATION ---
         applyInitialTheme();
@@ -1073,4 +1425,16 @@
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
 
