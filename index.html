@@ -931,12 +931,11 @@
                 const { saldoAnterior, saldoAtual } = data;
 
                 if (typeof saldoAnterior === 'number' && typeof saldoAtual === 'number') {
-                    const variacaoRS = saldoAtual - saldoAnterior;
-                    // De acordo com a regra de negócio do usuário, um número menor é melhor.
-                    const isImprovement = variacaoRS < 0; 
-                    const isWorsening = variacaoRS > 0;
+                    const variacaoAbsoluta = Math.abs(saldoAtual) - Math.abs(saldoAnterior);
+                    const isImprovement = variacaoAbsoluta > 0;
+                    const isWorsening = variacaoAbsoluta < 0;
 
-                    const variacaoPercent = saldoAnterior !== 0 ? (variacaoRS / Math.abs(saldoAnterior)) * 100 : 0;
+                    const variacaoPercent = saldoAnterior !== 0 ? (variacaoAbsoluta / Math.abs(saldoAnterior)) * 100 : 0;
                     
                     let icon = '';
                     let variationClass = '';
@@ -953,8 +952,8 @@
                         <div class="variation-cell ${variationClass}">
                             ${icon}
                             <div class="variation-details">
-                                <span>${money(variacaoRS * -1)}</span>
-                                <span class="variation-percent">${(variacaoPercent * -1).toFixed(2)}%</span>
+                                <span>${money(variacaoAbsoluta)}</span>
+                                <span class="variation-percent">${variacaoPercent.toFixed(2)}%</span>
                             </div>
                         </div>
                     `;
@@ -967,8 +966,8 @@
                         ${isFirstRowForInvestor ? data.investorName : ''}
                         <div class="titular-sub-row">${data.titular}</div>
                     </td>
-                    <td>${money(data.saldoAnterior * -1)}</td>
-                    <td class="highlight-col">${money(data.saldoAtual * -1)}</td>
+                    <td>${money(Math.abs(data.saldoAnterior))}</td>
+                    <td class="highlight-col">${money(Math.abs(data.saldoAtual))}</td>
                     <td>${variationHtml}</td>
                     <td>${statusHtml}</td>
                     <td class="table-actions">${isFirstRowForInvestor ? `<button class="btn btn-danger remove-investor-btn" data-investor-name="${data.investorName}">Remover</button>` : ''}</td>
@@ -1147,10 +1146,10 @@
             const firstValue = dataSlice[0].saldo_atual;
             const lastValue = dataSlice[dataSlice.length - 1].saldo_atual;
             
-            const variacaoRS = lastValue - firstValue;
-            const isImprovement = variacaoRS < 0;
-            const isWorsening = variacaoRS > 0;
-            const variacaoPercent = firstValue !== 0 ? (variacaoRS / Math.abs(firstValue)) * 100 : 0;
+            const variacaoAbsoluta = Math.abs(lastValue) - Math.abs(firstValue);
+            const isImprovement = variacaoAbsoluta > 0;
+            const isWorsening = variacaoAbsoluta < 0;
+            const variacaoPercent = firstValue !== 0 ? (variacaoAbsoluta / Math.abs(firstValue)) * 100 : 0;
             
             let icon = '';
             let variationClass = '';
@@ -1165,8 +1164,8 @@
             variationContainer.innerHTML = `
                 <div class="variation-cell ${variationClass}">
                     <div class="variation-details">
-                        <span>${money(variacaoRS * -1)}</span>
-                        <span class="variation-percent">${(variacaoPercent * -1).toFixed(2)}%</span>
+                        <span>${money(variacaoAbsoluta)}</span>
+                        <span class="variation-percent">${variacaoPercent.toFixed(2)}%</span>
                     </div>
                     ${icon}
                 </div>
@@ -1174,48 +1173,34 @@
         }
 
 
-        function updateCardView(investorName, days) {
-            const chart = analysisCharts.get(investorName);
-            const fullData = analysisFullData.get(investorName);
-            const cardElement = document.querySelector(`.investor-card[data-investor-name="${investorName}"]`);
-            if (!chart || !fullData || !cardElement) return;
-
-            const dataSlice = fullData.slice(-days);
-            const labels = dataSlice.map(d => new Date(d.DATA).toLocaleDateString('pt-BR', {timeZone: 'UTC'}));
-            const dataPoints = dataSlice.map(d => d.saldo_atual * -1); // Correção: Invertendo o sinal dos valores
-            
-            chart.data.labels = labels;
-            chart.data.datasets[0].data = dataPoints;
-
-            const isExpanded = days > 14;
-            chart.options.scales.x.ticks.display = isExpanded; 
-            chart.options.scales.y.display = isExpanded;
-
-            chart.update();
-            renderCardVariation(cardElement, dataSlice);
-        }
-
         function handleCardClick(event) {
             const clickedCard = event.currentTarget;
             const investorName = clickedCard.dataset.investorName;
             const isCurrentlyExpanded = clickedCard.classList.contains('expanded');
+            const chart = analysisCharts.get(investorName);
+            if(!chart) return;
 
             // Recolhe qualquer outro cartão que esteja expandido
             document.querySelectorAll('.investor-card.expanded').forEach(card => {
                 if (card !== clickedCard) {
                     card.classList.remove('expanded');
-                    updateCardView(card.dataset.investorName, 14);
+                    const otherChart = analysisCharts.get(card.dataset.investorName);
+                    if(otherChart) {
+                        otherChart.options.scales.x.ticks.display = false; 
+                        otherChart.options.scales.y.display = false;
+                        otherChart.update('none'); // 'none' for no animation
+                    }
                 }
             });
 
             // Expande ou recolhe o cartão clicado
-            clickedCard.classList.toggle('expanded');
+            const willBeExpanded = !isCurrentlyExpanded;
+            clickedCard.classList.toggle('expanded', willBeExpanded);
             
-            if (!isCurrentlyExpanded) {
-                updateCardView(investorName, 30); // Expande para 30 dias
-            } else {
-                updateCardView(investorName, 14); // Recolhe para 14 dias
-            }
+            // Mostra/esconde eixos no gráfico atual
+            chart.options.scales.x.ticks.display = willBeExpanded; 
+            chart.options.scales.y.display = willBeExpanded;
+            chart.update();
         }
         
         function renderInvestorCard(investorData) {
@@ -1224,8 +1209,9 @@
             investorData.dias.sort((a, b) => new Date(a.DATA) - new Date(b.DATA));
             analysisFullData.set(investorData.investidor, investorData.dias);
             
-            const lastDataPoint = investorData.dias[investorData.dias.length - 1];
-            const fourteenDayData = investorData.dias.slice(-14);
+            // Usa sempre os dados dos últimos 30 dias para todas as visualizações
+            const thirtyDayData = investorData.dias;
+            const lastDataPoint = thirtyDayData[thirtyDayData.length - 1];
 
             const card = document.createElement('div');
             card.className = 'investor-card';
@@ -1237,7 +1223,7 @@
                 </div>
                 <div class="card-summary">
                      <div class="latest-balance">
-                        <span class="balance-value">${money(lastDataPoint.saldo_atual * -1)}</span>
+                        <span class="balance-value">${money(Math.abs(lastDataPoint.saldo_atual))}</span>
                         <span class="balance-date">Saldo em ${new Date(lastDataPoint.DATA).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</span>
                     </div>
                     <div class="card-variation"></div>
@@ -1257,15 +1243,19 @@
             const chart = new Chart(canvas, {
                 type: 'line',
                 data: {
-                    labels: fourteenDayData.map(d => new Date(d.DATA).toLocaleDateString('pt-BR', {timeZone: 'UTC'})),
+                    labels: thirtyDayData.map(d => new Date(d.DATA).toLocaleDateString('pt-BR', {timeZone: 'UTC'})),
                     datasets: [{
                         label: 'Saldo Atual',
-                        data: fourteenDayData.map(d => d.saldo_atual * -1),
+                        data: thirtyDayData.map(d => Math.abs(d.saldo_atual)),
                         borderColor: chartBorderColor,
                         backgroundColor: chartBgColor,
                         fill: true,
                         tension: 0.4,
-                        pointRadius: 0
+                        pointRadius: 2,
+                        pointHoverRadius: 5,
+                        pointBackgroundColor: chartBorderColor,
+                        pointBorderWidth: 2,
+                        pointBorderColor: 'var(--surface)'
                     }]
                 },
                 options: {
@@ -1305,7 +1295,7 @@
             });
 
             analysisCharts.set(investorData.investidor, chart);
-            renderCardVariation(card, fourteenDayData);
+            renderCardVariation(card, thirtyDayData);
             card.addEventListener('click', handleCardClick);
         }
 
@@ -1425,6 +1415,10 @@
     </script>
 </body>
 </html>
+
+
+
+
 
 
 
