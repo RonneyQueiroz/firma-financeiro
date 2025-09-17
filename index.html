@@ -306,7 +306,7 @@
         }
         .table tbody tr:last-child td { border-bottom: none; }
         .table tbody tr:hover { background: #1F2937; }
-        .table-actions { display: flex; gap: 10px; }
+        .table-actions { display: flex; gap: 10px; align-items: center; }
         .loading-spinner {
             border: 2px solid var(--border);
             border-top: 2px solid var(--primary);
@@ -440,6 +440,19 @@
             text-align: left;
             margin-bottom: 20px;
         }
+        .whatsapp-status-icon {
+            display: inline-block;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        .whatsapp-status-icon svg {
+            width: 16px;
+            height: 16px;
+        }
+        .whatsapp-status-icon.valid { color: var(--success); }
+        .whatsapp-status-icon.invalid { color: var(--error); }
+        .whatsapp-status-icon.unchecked { color: var(--text-secondary); opacity: 0.6; }
+
         .login-btn {
             width: 100%;
             margin-top: 10px;
@@ -617,6 +630,13 @@
                         <button id="add-user-btn" class="btn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Adicionar Usuário</button>
                     </div>
                     <p class="page-subtitle"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Adicione, edite ou remova usuários da base de dados.</span></p>
+                    <div class="card">
+                        <h2>Configuração da API de Validação</h2>
+                        <div class="input-group">
+                            <label for="instance-name">Nome da Instância Conectada</label>
+                            <input type="text" id="instance-name" placeholder="Ex: AssistenteIA" value="AssistenteIA">
+                        </div>
+                    </div>
                     <div class="stats-cards">
                         <div class="stat-card"><h3>Total de Usuários</h3><p id="total-users-stat">0</p></div>
                         <div class="stat-card"><h3>Total de Investidores</h3><p id="total-investors-stat">0</p></div>
@@ -624,7 +644,7 @@
                     <div class="table-card">
                         <div class="table-scroller">
                             <table class="table" id="users-table">
-                                <thead><tr><th>Investidor</th><th>Usuário Anima</th><th>Email</th><th>Ações</th></tr></thead>
+                                <thead><tr><th>Investidor</th><th>Usuário Anima</th><th>Email</th><th>Contato</th><th>Ações</th></tr></thead>
                                 <tbody id="users-table-body"></tbody>
                             </table>
                         </div>
@@ -644,6 +664,7 @@
                     <div class="input-group"><label for="user-investidor">Investidor</label><input type="text" id="user-investidor" placeholder="Nome do Investidor" required></div>
                     <div class="input-group"><label for="user-anima">Usuário Anima</label><input type="text" id="user-anima" placeholder="Nome do usuário no sistema Anima"></div>
                     <div class="input-group" style="grid-column: 1 / -1;"><label for="user-email">Email</label><input type="email" id="user-email" placeholder="contato@email.com" required></div>
+                    <div class="input-group" style="grid-column: 1 / -1;"><label for="user-contato">Contato (Telefone)</label><input type="text" id="user-contato" placeholder="(XX) XXXXX-XXXX"></div>
                 </div>
                 <button type="submit" class="btn" style="width: 100%; margin-top: 20px;">Salvar</button>
             </form>
@@ -672,12 +693,15 @@
         const N8N_CHECK_WEBHOOK_URL = 'https://webhook.infodash.com.br/webhook/dc26f840-eccc-435e-8c63-3c34a44a9ee7';
         const N8N_SEND_ALL_WEBHOOK_URL = 'https://webhook.infodash.com.br/webhook/db24508d-15d9-4854-838f-2f319ba0f21d';
         const N8N_ANALYSIS_WEBHOOK_URL = 'https://webhook.infodash.com.br/webhook/e6e23f23-4387-41cc-9bd3-cdee3de6ffb8';
+        const EVO_API_URL = "https://api.infodash.com.br";
+        const EVO_API_KEY = "2533B88A-8665-49DB-BC68-C4D7D7FFF710";
         
         // --- STATE ---
         let allUsersData = [];
         let investorsMap = new Map();
         let batchList = new Map(); 
         let confirmCallback = null;
+        let userListenersAttached = false;
 
         // --- DOM Elements ---
         const body = document.body;
@@ -702,6 +726,7 @@
         const datePresetButtons = document.querySelectorAll('.btn-preset');
 
         // --- Users Page Elements ---
+        const usersPage = document.getElementById('users-page');
         const addUserBtn = document.getElementById('add-user-btn');
         const usersTableBody = document.getElementById('users-table-body');
         const totalUsersStat = document.getElementById('total-users-stat');
@@ -739,7 +764,7 @@
         async function loadAllData() {
             const { data, error } = await sb
                 .from('dUsuariosEmail')
-                .select('id, email, "usuarioAnima", investidor')
+                .select('id, email, "usuarioAnima", investidor, contato')
                 .order('investidor', { ascending: true });
 
             if (error) {
@@ -779,84 +804,88 @@
         }
 
         // --- BATCH PAGE LOGIC ---
-        datePresetButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                datePresetButtons.forEach(btn => btn.classList.remove('active'));
-                e.target.classList.add('active');
-                
-                const today = new Date();
-                let startDate, endDate;
+        if (datePresetButtons.length > 0) {
+            datePresetButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    datePresetButtons.forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    
+                    const today = new Date();
+                    let startDate, endDate;
 
-                switch(e.target.id) {
-                    case 'btn-last-7':
-                        endDate = new Date(today);
-                        startDate = new Date(today);
-                        startDate.setDate(today.getDate() - 7);
-                        break;
-                    case 'btn-last-30':
-                        endDate = new Date(today);
-                        startDate = new Date(today);
-                        startDate.setDate(today.getDate() - 30);
-                        break;
-                    case 'btn-prev-month':
-                        const firstDayCurrent = new Date(today.getFullYear(), today.getMonth(), 1);
-                        endDate = new Date(firstDayCurrent);
-                        endDate.setDate(endDate.getDate() - 1);
-                        startDate = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
-                        break;
-                }
-                startDateInput.value = formatDate(startDate);
-                endDateInput.value = formatDate(endDate);
+                    switch(e.target.id) {
+                        case 'btn-last-7':
+                            endDate = new Date(today);
+                            startDate = new Date(today);
+                            startDate.setDate(today.getDate() - 7);
+                            break;
+                        case 'btn-last-30':
+                            endDate = new Date(today);
+                            startDate = new Date(today);
+                            startDate.setDate(today.getDate() - 30);
+                            break;
+                        case 'btn-prev-month':
+                            const firstDayCurrent = new Date(today.getFullYear(), today.getMonth(), 1);
+                            endDate = new Date(firstDayCurrent);
+                            endDate.setDate(endDate.getDate() - 1);
+                            startDate = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+                            break;
+                    }
+                    startDateInput.value = formatDate(startDate);
+                    endDateInput.value = formatDate(endDate);
+                });
             });
-        });
+        }
 
-        addInvestorBtn.addEventListener('click', async () => {
-            const selectedInvestors = Array.from(customOptions.querySelectorAll('input[type="checkbox"]:checked'))
-                                         .map(cb => cb.closest('.custom-option').dataset.value);
-            const startDate = startDateInput.value;
-            const endDate = endDateInput.value;
+        if (addInvestorBtn) {
+            addInvestorBtn.addEventListener('click', async () => {
+                const selectedInvestors = Array.from(customOptions.querySelectorAll('input[type="checkbox"]:checked'))
+                                             .map(cb => cb.closest('.custom-option').dataset.value);
+                const startDate = startDateInput.value;
+                const endDate = endDateInput.value;
 
-            if (selectedInvestors.length === 0 || !startDate || !endDate) {
-                showNotification('Selecione ao menos um investidor e o período completo.', 'error');
-                return;
-            }
-            
-            // Abordagem sequencial para evitar race conditions
-            for (const investorName of selectedInvestors) {
-                const accounts = investorsMap.get(investorName) || [];
-                const titulars = accounts.map(acc => acc.usuarioAnima).filter(Boolean);
-
-                if (titulars.length === 0) {
-                    showNotification(`Investidor "${investorName}" não possui contas 'usuário Anima' válidas.`, 'error');
-                    continue;
+                if (selectedInvestors.length === 0 || !startDate || !endDate) {
+                    showNotification('Selecione ao menos um investidor e o período completo.', 'error');
+                    return;
                 }
+                
+                // Abordagem sequencial para evitar race conditions
+                for (const investorName of selectedInvestors) {
+                    const accounts = investorsMap.get(investorName) || [];
+                    const titulars = accounts.map(acc => acc.usuarioAnima).filter(Boolean);
 
-                for (const titular of titulars) {
-                    const uniqueId = `${investorName}::${titular}`;
-                     if (batchList.has(uniqueId)) {
-                        showNotification(`Conta "${titular}" já está na lista.`, 'info');
+                    if (titulars.length === 0) {
+                        showNotification(`Investidor "${investorName}" não possui contas 'usuário Anima' válidas.`, 'error');
                         continue;
                     }
-                    const accountData = { 
-                        id: uniqueId,
-                        investorName: investorName,
-                        titular: titular, 
-                        status: 'loading',
-                        saldoAnterior: null,
-                        saldoAtual: null
-                    };
-                    batchList.set(uniqueId, accountData);
-                }
-            }
-            
-            renderBatchTable();
-            
-            const accountsToFetch = Array.from(batchList.values()).filter(acc => acc.status === 'loading');
 
-            for (const account of accountsToFetch) {
-                 await fetchAccountBalanceFromN8N(account.id, startDate, endDate);
-            }
-        });
+                    for (const titular of titulars) {
+                        const uniqueId = `${investorName}::${titular}`;
+                         if (batchList.has(uniqueId)) {
+                            showNotification(`Conta "${titular}" já está na lista.`, 'info');
+                            continue;
+                        }
+                        const accountData = { 
+                            id: uniqueId,
+                            investorName: investorName,
+                            titular: titular, 
+                            status: 'loading',
+                            saldoAnterior: null,
+                            saldoAtual: null
+                        };
+                        batchList.set(uniqueId, accountData);
+                    }
+                }
+                
+                renderBatchTable();
+                
+                const accountsToFetch = Array.from(batchList.values()).filter(acc => acc.status === 'loading');
+
+                for (const account of accountsToFetch) {
+                     await fetchAccountBalanceFromN8N(account.id, startDate, endDate);
+                }
+            });
+        }
         
         async function fetchAccountBalanceFromN8N(uniqueId, startDate, endDate) {
             const accountData = batchList.get(uniqueId);
@@ -899,6 +928,7 @@
         }
 
         function renderBatchTable() {
+            if (!batchTableBody) return;
             batchTableBody.innerHTML = '';
             if (batchList.size === 0) {
                 batchTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Adicione investidores para conferir os saldos.</td></tr>';
@@ -976,103 +1006,199 @@
             });
         }
         
-        batchTableBody.addEventListener('click', (e) => {
-             if (e.target.classList.contains('remove-investor-btn')) {
-                const investorNameToRemove = e.target.dataset.investorName;
-                batchList.forEach((value, key) => {
-                    if (value.investorName === investorNameToRemove) {
-                        batchList.delete(key);
-                    }
-                });
-                renderBatchTable();
-            }
-        });
-        
-        sendAllBtn.addEventListener('click', async () => {
-            const startDate = startDateInput.value;
-            const endDate = endDateInput.value;
-            if (!startDate || !endDate) {
-                showNotification('As datas de início e fim devem estar preenchidas para o disparo.', 'error');
-                return;
-            }
-            const investorsToSend = Array.from(batchList.values()).filter(data => data.status === 'loaded');
-            if (investorsToSend.length === 0) {
-                showNotification('Nenhum investidor com dados carregados para disparar.', 'info');
-                return;
-            }
-            sendAllBtn.disabled = true;
-            sendAllBtn.innerHTML = '<div class="loading-spinner" style="border-top-color: #0A0F1A;"></div> Enviando...';
-            let successCount = 0;
-            for (const investorData of investorsToSend) {
-                try {
-                    // Note: This sends one webhook per investor, not per account. Adjust if needed.
-                    const payload = { investidor: investorData.investorName, dataInicio: startDate, dataFim: endDate };
-                    const response = await fetch(N8N_SEND_ALL_WEBHOOK_URL, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        if (batchTableBody) {
+            batchTableBody.addEventListener('click', (e) => {
+                 if (e.target.classList.contains('remove-investor-btn')) {
+                    const investorNameToRemove = e.target.dataset.investorName;
+                    batchList.forEach((value, key) => {
+                        if (value.investorName === investorNameToRemove) {
+                            batchList.delete(key);
+                        }
                     });
-                    if (response.ok) {
-                        successCount++;
-                        investorData.status = 'sent';
-                    } else { throw new Error(`Status ${response.status}`); }
-                } catch (error) {
-                     showNotification(`Erro ao enviar para ${investorData.investorName}: ${error.message}`, 'error');
-                     investorData.status = 'send-error';
+                    renderBatchTable();
                 }
-            }
-            renderBatchTable(); // Re-render all at the end
-            showNotification(`${successCount} de ${investorsToSend.length} investidores enviados com sucesso!`, 'success');
-            sendAllBtn.disabled = false;
-            sendAllBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Enviar Extratos por E-mail';
-        });
+            });
+        }
+        
+        if (sendAllBtn) {
+            sendAllBtn.addEventListener('click', async () => {
+                const startDate = startDateInput.value;
+                const endDate = endDateInput.value;
+                if (!startDate || !endDate) {
+                    showNotification('As datas de início e fim devem estar preenchidas para o disparo.', 'error');
+                    return;
+                }
+                const investorsToSend = Array.from(batchList.values()).filter(data => data.status === 'loaded');
+                if (investorsToSend.length === 0) {
+                    showNotification('Nenhum investidor com dados carregados para disparar.', 'info');
+                    return;
+                }
+                sendAllBtn.disabled = true;
+                sendAllBtn.innerHTML = '<div class="loading-spinner" style="border-top-color: #0A0F1A;"></div> Enviando...';
+                let successCount = 0;
+                for (const investorData of investorsToSend) {
+                    try {
+                        // Note: This sends one webhook per investor, not per account. Adjust if needed.
+                        const payload = { investidor: investorData.investorName, dataInicio: startDate, dataFim: endDate };
+                        const response = await fetch(N8N_SEND_ALL_WEBHOOK_URL, {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                        });
+                        if (response.ok) {
+                            successCount++;
+                            investorData.status = 'sent';
+                        } else { throw new Error(`Status ${response.status}`); }
+                    } catch (error) {
+                         showNotification(`Erro ao enviar para ${investorData.investorName}: ${error.message}`, 'error');
+                         investorData.status = 'send-error';
+                    }
+                }
+                renderBatchTable(); // Re-render all at the end
+                showNotification(`${successCount} de ${investorsToSend.length} investidores enviados com sucesso!`, 'success');
+                sendAllBtn.disabled = false;
+                sendAllBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Enviar Extratos por E-mail';
+            });
+        }
 
         // --- Custom Select Logic ---
-        customSelectTrigger.addEventListener('click', () => { customSelectWrapper.classList.toggle('open'); });
-        window.addEventListener('click', (e) => { if (!customSelectWrapper.contains(e.target)) { customSelectWrapper.classList.remove('open'); } });
-        customOptions.addEventListener('change', () => {
-            const selectedCount = customOptions.querySelectorAll('input[type="checkbox"]:checked').length;
-            if (selectedCount === 0) {
-                customSelectTrigger.querySelector('span').textContent = 'Selecione...';
-            } else if (selectedCount === 1) {
-                const selectedName = customOptions.querySelector('input[type="checkbox"]:checked').closest('.custom-option').dataset.value;
-                customSelectTrigger.querySelector('span').textContent = selectedName;
-            } else {
-                customSelectTrigger.querySelector('span').textContent = `${selectedCount} investidores selecionados`;
-            }
-        });
+        if (customSelectTrigger) {
+            customSelectTrigger.addEventListener('click', () => { customSelectWrapper.classList.toggle('open'); });
+            window.addEventListener('click', (e) => { if (customSelectWrapper && !customSelectWrapper.contains(e.target)) { customSelectWrapper.classList.remove('open'); } });
+            customOptions.addEventListener('change', () => {
+                const selectedCount = customOptions.querySelectorAll('input[type="checkbox"]:checked').length;
+                if (selectedCount === 0) {
+                    customSelectTrigger.querySelector('span').textContent = 'Selecione...';
+                } else if (selectedCount === 1) {
+                    const selectedName = customOptions.querySelector('input[type="checkbox"]:checked').closest('.custom-option').dataset.value;
+                    customSelectTrigger.querySelector('span').textContent = selectedName;
+                } else {
+                    customSelectTrigger.querySelector('span').textContent = `${selectedCount} investidores selecionados`;
+                }
+            });
+        }
 
         // --- Users Page Logic & Modals ---
         function renderUsersPage() {
             if(!usersTableBody) return;
             usersTableBody.innerHTML = '';
             if (allUsersData.length === 0) {
-                usersTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum usuário cadastrado.</td></tr>';
+                usersTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum usuário cadastrado.</td></tr>';
             } else {
                 allUsersData.forEach(user => {
                     const tr = document.createElement('tr');
                     tr.dataset.userId = user.id;
-                    tr.innerHTML = `<td>${user.investidor || 'N/A'}</td><td>${user.usuarioAnima || 'N/A'}</td><td>${user.email}</td><td class="table-actions"><button class="btn btn-secondary edit-user-btn">Editar</button><button class="btn btn-danger delete-user-btn">Excluir</button></td>`;
+                    tr.innerHTML = `
+                        <td>${user.investidor || 'N/A'}</td>
+                        <td>${user.usuarioAnima || 'N/A'}</td>
+                        <td>${user.email}</td>
+                        <td>
+                            ${user.contato || 'N/A'}
+                            <span class="whatsapp-status-icon unchecked" id="status-${user.id}" title="Não verificado">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                            </span>
+                        </td>
+                        <td class="table-actions">
+                            <button class="btn btn-secondary edit-user-btn">Editar</button>
+                            <button class="btn btn-danger delete-user-btn">Excluir</button>
+                        </td>`;
                     usersTableBody.appendChild(tr);
                 });
             }
             totalUsersStat.textContent = allUsersData.length;
             totalInvestorsStat.textContent = investorsMap.size;
         }
-        addUserBtn.addEventListener('click', () => openUserModal());
-        usersTableBody.addEventListener('click', (e) => {
-            const actionButton = e.target.closest('.edit-user-btn, .delete-user-btn');
-            if (!actionButton) return;
-            const userId = e.target.closest('tr').dataset.userId;
-            const user = allUsersData.find(u => u.id === userId);
-            if (actionButton.classList.contains('edit-user-btn')) {
-                openUserModal(user);
-            } else if (actionButton.classList.contains('delete-user-btn')) {
-                openConfirmModal(`Tem certeza que deseja excluir o usuário "${user.investidor || user.email}"?`, async () => {
-                    const { error } = await sb.from('dUsuariosEmail').delete().eq('id', userId);
-                    if (error) { showNotification(`Erro: ${error.message}`, 'error'); } 
-                    else { showNotification('Usuário excluído com sucesso!'); await loadAllData(); }
-                });
+
+        async function runAutomaticValidation() {
+            const instanceNameInput = usersPage.querySelector('#instance-name');
+            const instanceName = instanceNameInput ? instanceNameInput.value.trim() : null;
+
+            if (!instanceName) {
+                console.warn('Nome da instância não definido. Validação automática pulada.');
+                return;
             }
-        });
+
+            const usersToValidate = allUsersData.filter(user => user.contato);
+            if (usersToValidate.length === 0) return;
+            
+            // Agrupa IDs de usuário por número de telefone para lidar com duplicados
+            const validationMap = new Map();
+            usersToValidate.forEach(user => {
+                let phoneNumber = user.contato.replace(/\D/g, '');
+                if (phoneNumber.length <= 11) {
+                    phoneNumber = `55${phoneNumber}`;
+                }
+                if (!validationMap.has(phoneNumber)) {
+                    validationMap.set(phoneNumber, []);
+                }
+                validationMap.get(phoneNumber).push(user.id);
+            });
+
+            // Cria uma lista de números únicos para a API
+            const numbersPayload = [...validationMap.keys()];
+            if (numbersPayload.length === 0) return;
+            
+            // Atualiza a UI para mostrar que a validação está em progresso
+            validationMap.forEach(userIds => {
+                userIds.forEach(userId => {
+                    const statusIcon = document.getElementById(`status-${userId}`);
+                    if (statusIcon) {
+                        statusIcon.innerHTML = `<div class="loading-spinner" style="width: 14px; height: 14px;"></div>`;
+                        statusIcon.title = 'Validando...';
+                    }
+                });
+            });
+
+            try {
+                const url = `${EVO_API_URL}/chat/whatsappNumbers/${instanceName}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': EVO_API_KEY
+                    },
+                    body: JSON.stringify({ numbers: numbersPayload })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API respondeu com status ${response.status}: ${errorData.message || 'Erro desconhecido'}`);
+                }
+
+                const validationResults = await response.json();
+                const resultsMap = new Map(validationResults.map(res => [res.jid.split('@')[0], res]));
+
+                validationMap.forEach((userIds, phoneNumber) => {
+                    const result = resultsMap.get(phoneNumber);
+                    userIds.forEach(userId => {
+                         const statusIcon = document.getElementById(`status-${userId}`);
+                        if (!statusIcon) return;
+
+                        if (result && result.exists) {
+                            statusIcon.className = 'whatsapp-status-icon valid';
+                            statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
+                            statusIcon.title = `WhatsApp Válido (ID: ${result.jid})`;
+                        } else {
+                            statusIcon.className = 'whatsapp-status-icon invalid';
+                            statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+                            statusIcon.title = 'WhatsApp Inválido ou Inexistente';
+                        }
+                    });
+                });
+
+            } catch (error) {
+                showNotification('Erro ao validar contatos automaticamente.', 'error');
+                usersToValidate.forEach(user => {
+                    const statusIcon = document.getElementById(`status-${user.id}`);
+                    if (statusIcon) {
+                        statusIcon.className = 'whatsapp-status-icon unchecked';
+                        statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>`;
+                        statusIcon.title = 'Falha na verificação';
+                    }
+                });
+                console.error("Erro na validação automática:", error);
+            }
+        }
+
+
         function openUserModal(user = null) {
             userForm.reset();
             if (user) {
@@ -1081,6 +1207,7 @@
                 document.getElementById('user-investidor').value = user.investidor || '';
                 document.getElementById('user-anima').value = user.usuarioAnima || '';
                 document.getElementById('user-email').value = user.email || '';
+                document.getElementById('user-contato').value = user.contato || '';
             } else { userModalTitle.textContent = 'Adicionar Novo Usuário'; }
             userModal.style.display = 'block';
         }
@@ -1097,6 +1224,7 @@
                 investidor: document.getElementById('user-investidor').value.trim(),
                 usuarioAnima: document.getElementById('user-anima').value.trim(),
                 email: document.getElementById('user-email').value.trim(),
+                contato: document.getElementById('user-contato').value.trim(),
             };
             const response = id ? await sb.from('dUsuariosEmail').update(userData).eq('id', id) : await sb.from('dUsuariosEmail').insert([userData]);
             if (response.error) { showNotification(`Erro: ${response.error.message}`, 'error'); } 
@@ -1352,8 +1480,35 @@
             const activePage = document.getElementById(`${pageId}-page`);
             if (activePage) activePage.classList.add('active');
             navLinks.forEach(link => link.classList.toggle('active', link.dataset.page === pageId));
-            if (pageId === 'users' && allUsersData.length > 0) {
-                 renderUsersPage();
+            
+            if (pageId === 'users') {
+                if (allUsersData.length > 0) {
+                    renderUsersPage();
+                }
+                if (!userListenersAttached) {
+                    if (addUserBtn) {
+                        addUserBtn.addEventListener('click', () => openUserModal());
+                    }
+                    if (usersTableBody) {
+                        usersTableBody.addEventListener('click', async (e) => {
+                            const actionButton = e.target.closest('.edit-user-btn, .delete-user-btn');
+                            if (!actionButton) return;
+                            const userId = e.target.closest('tr').dataset.userId;
+                            const user = allUsersData.find(u => u.id === userId);
+                            if (actionButton.classList.contains('edit-user-btn')) {
+                                openUserModal(user);
+                            } else if (actionButton.classList.contains('delete-user-btn')) {
+                                openConfirmModal(`Tem certeza que deseja excluir o usuário "${user.investidor || user.email}"?`, async () => {
+                                    const { error } = await sb.from('dUsuariosEmail').delete().eq('id', userId);
+                                    if (error) { showNotification(`Erro: ${error.message}`, 'error'); } 
+                                    else { showNotification('Usuário excluído com sucesso!'); await loadAllData(); }
+                                });
+                            }
+                        });
+                    }
+                    userListenersAttached = true;
+                }
+                runAutomaticValidation();
             }
             if(pageId === 'analysis'){
                 loadAnalysisCharts();
@@ -1415,20 +1570,4 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
