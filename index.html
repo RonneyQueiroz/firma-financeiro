@@ -704,6 +704,7 @@
         let batchList = new Map(); 
         let confirmCallback = null;
         let userListenersAttached = false;
+        let lastQueryDates = { start: null, end: null };
 
         // --- DOM Elements ---
         const body = document.body;
@@ -896,6 +897,13 @@
                     return;
                 }
                 
+                // Limpa a lista se as datas mudaram ou é uma nova consulta
+                if (startDate !== lastQueryDates.start || endDate !== lastQueryDates.end) {
+                    batchList.clear();
+                }
+                lastQueryDates = { start: startDate, end: endDate };
+
+
                 for (const investorName of selectedInvestors) {
                     const accounts = investorsMap.get(investorName) || [];
                     const titulars = accounts.map(acc => acc.usuarioanima).filter(Boolean);
