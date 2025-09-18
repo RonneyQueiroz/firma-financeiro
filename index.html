@@ -183,6 +183,14 @@
         .card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 25px; margin-bottom: 30px; }
         .card h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
         .card h2 svg { width: 22px; height: 22px; stroke: var(--secondary-accent); }
+        .card-footer-tip {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px dashed var(--border);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; align-items: end; }
         .input-group { position: relative; }
         .input-group label { display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; }
@@ -256,6 +264,7 @@
         .stat-card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
         .stat-card h3 { font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
         .stat-card p { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); }
+        .stat-card small { font-size: 0.8rem; color: var(--text-secondary); }
         .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-top: 30px; }
         .table-scroller { overflow-x: auto; }
         .table { width: 100%; border-collapse: collapse; }
@@ -309,56 +318,141 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: var(--background);
+            background-color: transparent;
             align-items: center;
             justify-content: center;
             z-index: 2000;
-            transition: opacity 0.5s ease;
+            padding: 20px;
         }
-        .login-card {
-            background-color: var(--surface);
-            padding: 40px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
+        .login-container {
+            display: flex;
             width: 100%;
-            max-width: 400px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 900px;
+            min-height: 550px;
+            background-color: var(--surface);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
         }
-        .login-logo {
-            height: 50px;
-            margin-bottom: 20px;
+        .login-illustration {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8fafc;
+        }
+         .login-illustration h2 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin-top: 20px;
+            font-weight: 600;
+        }
+        .login-illustration p {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            text-align: center;
+            max-width: 300px;
+        }
+        .login-form-panel {
+            flex: 1;
+            padding: 50px;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .login-form-panel h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
         }
         .login-subtitle {
-            color: var(--text-secondary);
             margin-bottom: 30px;
+            opacity: 0.8;
         }
         #login-form .input-group {
-            text-align: left;
             margin-bottom: 20px;
+            position: relative;
         }
+        #login-form .input-group label {
+            display: none; /* Labels are hidden, placeholders used instead */
+        }
+        #login-form .input-group input {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 8px;
+            padding: 14px 14px 14px 45px;
+            font-size: 1rem;
+        }
+        #login-form .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        #login-form .input-group input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+        }
+        #login-form .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.6);
+            pointer-events: none;
+        }
+        
         .whatsapp-status-icon {
             display: inline-block;
             margin-left: 8px;
             vertical-align: middle;
         }
-        .whatsapp-status-icon svg {
-            width: 16px;
-            height: 16px;
-        }
+        .whatsapp-status-icon svg { width: 16px; height: 16px; }
         .whatsapp-status-icon.valid { color: var(--success); }
         .whatsapp-status-icon.invalid { color: var(--error); }
         .whatsapp-status-icon.unchecked { color: var(--text-secondary); opacity: 0.6; }
 
         .login-btn {
             width: 100%;
-            margin-top: 10px;
+            margin-top: 15px;
+            padding: 14px;
+            font-size: 1rem;
+            background-color: var(--secondary-accent);
+            color: white;
+            font-weight: 700;
+            border-radius: 8px;
+            transition: background-color 0.2s, transform 0.1s;
         }
+        .login-btn:hover {
+            background-color: #218838;
+        }
+        .login-btn:active {
+            transform: scale(0.98);
+        }
+
         .login-error-message {
-            color: var(--error);
+            color: #ffcdd2;
             font-size: 0.9rem;
             height: 20px;
             margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .login-container {
+                flex-direction: column;
+                min-height: 0;
+            }
+            .login-illustration {
+                display: none;
+            }
+            .login-form-panel {
+                padding: 40px;
+            }
         }
 
         /* --- BOTÕES DE PERÍODO --- */
@@ -388,21 +482,35 @@
     <div id="particles-js"></div>
 
     <div id="login-screen">
-        <div class="login-card">
-            <img src="https://i.ibb.co/RkRnZJcf/logo-firma.png" alt="Firma Capital Logo" class="login-logo">
-            <p class="login-subtitle">Acesse a Central de Controle</p>
-            <form id="login-form">
-                <div class="input-group">
-                    <label for="username">Usuário</label>
-                    <input type="text" id="username" required value="firma">
-                </div>
-                <div class="input-group">
-                    <label for="password">Senha</label>
-                    <input type="password" id="password" required value="firma2025*">
-                </div>
-                <p id="login-error" class="login-error-message"></p>
-                <button type="submit" class="btn login-btn">Entrar</button>
-            </form>
+        <div class="login-container">
+            <div class="login-illustration">
+                <img src="https://i.ibb.co/RkRnZJcf/logo-firma.png" alt="Firma Capital Logo" style="height: 60px; object-fit: contain; margin-bottom: 30px;">
+                <img src="https://i.ibb.co/yBMbBqQW/Finance-app-1.gif" alt="Animação de aplicativo financeiro" style="width: 100%; max-width: 300px; height: auto; border-radius: 8px;">
+                <h2>Inteligência de Dados</h2>
+                <p>Potencialize suas análises e automatize a comunicação com seus clientes.</p>
+            </div>
+            <div class="login-form-panel">
+                <h1>Bem-vindo!</h1>
+                <p class="login-subtitle">Acesse a Central de Controle.</p>
+                <form id="login-form">
+                    <div class="input-group">
+                        <label for="username">Usuário</label>
+                         <div class="input-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <input type="text" id="username" required placeholder="Seu usuário">
+                    </div>
+                    <div class="input-group">
+                        <label for="password">Senha</label>
+                        <div class="input-icon">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </div>
+                        <input type="password" id="password" required placeholder="Sua senha">
+                    </div>
+                    <p id="login-error" class="login-error-message"></p>
+                    <button type="submit" class="btn login-btn">Entrar</button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -437,7 +545,7 @@
                     </div>
                     <p class="page-subtitle">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.7 19.3 2 22l2.7-2.7"/><path d="M12.8 11.2 14 10l-4.4-4.4-1.2 1.2"/><path d="m2.3 21.7 5.1-5.1"/><path d="M11 2a3 3 0 0 1 3 3L8 11l-3 3 3 3 6-6 3-3a3 3 0 0 1 3 3"/><path d="M14 18l-3-3"/></svg>
-                        <span>Adicione investidores, confira os saldos do período e dispare notificações em massa.</span>
+                        <span>Siga os passos para conferir os dados e notificar os investidores de forma automatizada e segura.</span>
                     </p>
                     
                     <div class="card">
@@ -454,7 +562,7 @@
 
                         <div class="form-grid">
                             <div class="input-group" style="flex-grow: 2;">
-                                <label for="investor-selector">Investidores (Ctrl+Clique para múltiplos)</label>
+                                <label for="investor-selector">Investidores (Selecione um ou mais)</label>
                                 <div class="custom-select-wrapper" id="investor-selector-wrapper">
                                     <div class="custom-select-trigger">
                                         <span>Selecione...</span>
@@ -466,11 +574,17 @@
                             </div>
                             <div class="input-group"><label for="start-date">Data de Início</label><input type="date" id="start-date"></div>
                             <div class="input-group"><label for="end-date">Data Final</label><input type="date" id="end-date"></div>
-                            <button id="add-investor-btn" class="btn" style="height: 47px;">Adicionar à Lista</button>
+                            <button id="add-investor-btn" class="btn" style="height: 47px;">Consultar e Adicionar</button>
+                        </div>
+                        <div class="card-footer-tip">
+                            <strong>Dica:</strong> Use os botões de período para preencher as datas rapidamente ou defina um intervalo personalizado para sua análise.
                         </div>
                     </div>
 
                     <div class="table-card">
+                         <div style="padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; border-bottom: 1px solid var(--border);">
+                            <h3 style="font-size: 1.1rem; font-weight: 600; margin: 0;">2. Conferir e Aprovar</h3>
+                        </div>
                         <div class="table-scroller">
                             <table class="table" id="batch-table">
                                 <thead>
@@ -487,9 +601,12 @@
                             </table>
                         </div>
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px;">
-                         <button id="send-whatsapp-btn" class="btn" disabled style="background-color: #25D366; --primary-hover: #128C7E;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>Enviar por WhatsApp</button>
-                        <button id="send-all-btn" class="btn" disabled><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Enviar por E-mail</button>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 15px; margin-top: 20px;">
+                        <h3 style="font-size: 1.1rem; font-weight: 600; margin: 0;">3. Disparar Notificações</h3>
+                         <div style="display: flex; gap: 15px;">
+                            <button id="send-whatsapp-btn" class="btn" disabled title="Envia as notificações para os contatos com WhatsApp válido." style="background-color: #25D366; --primary-hover: #128C7E;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>Enviar por WhatsApp</button>
+                            <button id="send-all-btn" class="btn" disabled title="Envia as notificações para todos os e-mails cadastrados."><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Enviar por E-mail</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -501,11 +618,20 @@
                         <h1 class="panel-title">Gerenciar Usuários</h1>
                         <button id="add-user-btn" class="btn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Adicionar Usuário</button>
                     </div>
-                    <p class="page-subtitle"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Adicione, edite ou remova usuários da base de dados.</span></p>
+                    <p class="page-subtitle"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Gerencie a base de dados central de investidores, seus contatos e credenciais do sistema Anima.</span></p>
                     
                     <div class="stats-cards">
-                        <div class="stat-card"><h3>Total de Usuários</h3><p id="total-users-stat">0</p></div>
-                        <div class="stat-card"><h3>Total de Investidores</h3><p id="total-investors-stat">0</p></div>
+                        <div class="stat-card"><h3>Total de Usuários</h3><p id="total-users-stat">0</p><small>Registros únicos na base.</small></div>
+                        <div class="stat-card"><h3>Total de Investidores</h3><p id="total-investors-stat">0</p><small>Agrupamentos de contas.</small></div>
+                    </div>
+                    <div class="card" style="margin-top: 30px;">
+                        <h2 style="margin-bottom: 15px;">Legenda de Status do Contato</h2>
+                        <div style="display: flex; flex-wrap: wrap; gap: 20px; font-size: 0.9rem;">
+                             <div style="display: flex; align-items: center; gap: 8px;"><span class="whatsapp-status-icon valid"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span> Contato Válido</div>
+                             <div style="display: flex; align-items: center; gap: 8px;"><span class="whatsapp-status-icon invalid"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span> Contato Inválido</div>
+                             <div style="display: flex; align-items: center; gap: 8px;"><span class="whatsapp-status-icon unchecked"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span> Não Verificado</div>
+                             <div style="display: flex; align-items: center; gap: 8px;"><span class="whatsapp-status-icon"><div class="loading-spinner" style="width: 14px; height: 14px;"></div></span> Verificando...</div>
+                        </div>
                     </div>
                     <div class="table-card">
                         <div class="table-scroller">
@@ -529,7 +655,11 @@
                 <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
                     <div class="input-group"><label for="user-investidor">Investidor</label><input type="text" id="user-investidor" placeholder="Nome do Investidor" required></div>
                     <div class="input-group"><label for="user-anima">Usuário Anima</label><input type="text" id="user-anima" placeholder="Nome do usuário no sistema Anima"></div>
-                    <div class="input-group" style="grid-column: 1 / -1;"><label for="user-email">Email</label><input type="text" id="user-email" placeholder="contato@email.com, outro@email.com"></div>
+                    <div class="input-group" style="grid-column: 1 / -1;">
+                        <label for="user-email">Email</label>
+                        <input type="text" id="user-email" placeholder="contato@email.com, outro@email.com">
+                        <small style="color: var(--text-secondary); margin-top: 5px; display: block;">Para múltiplos e-mails, separe-os por vírgula.</small>
+                    </div>
                     <div class="input-group" style="grid-column: 1 / -1;"><label for="user-contato">Contato (Telefone)</label><input type="text" id="user-contato" placeholder="(XX) XXXXX-XXXX"></div>
                 </div>
                 <button type="submit" class="btn" style="width: 100%; margin-top: 20px;">Salvar</button>
@@ -642,6 +772,7 @@
                 processInvestors();
                 populateInvestorSelector();
                 renderUsersPage();
+                runAutomaticValidation();
             } catch(error) {
                 showNotification(`Erro ao buscar dados: ${error.message}`, 'error');
             }
@@ -846,7 +977,7 @@
             if (!batchTableBody) return;
             batchTableBody.innerHTML = '';
             if (batchList.size === 0) {
-                batchTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Adicione investidores para conferir os saldos.</td></tr>';
+                batchTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Sua lista de envio está vazia. Comece adicionando investidores no passo 1.</td></tr>';
                 if(sendAllBtn) sendAllBtn.disabled = true;
                 if(sendWhatsappBtn) sendWhatsappBtn.disabled = true;
                 return;
@@ -1061,7 +1192,7 @@
             if(!usersTableBody) return;
             usersTableBody.innerHTML = '';
             if (allUsersData.length === 0) {
-                usersTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum usuário cadastrado.</td></tr>';
+                usersTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Nenhum usuário encontrado. Clique em "Adicionar Usuário" para começar.</td></tr>';
             } else {
                 allUsersData.forEach(user => {
                     const tr = document.createElement('tr');
@@ -1334,4 +1465,5 @@
     </script>
 </body>
 </html>
+
 
