@@ -7,29 +7,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         :root {
-            --background: #011f3a;
-            --surface: #003366;
-            --primary: #00a9e0;
-            --primary-hover: #008bc5;
-            --secondary-accent: #8cc63f;
-            --secondary-accent-shadow: rgba(140, 198, 63, 0.2);
-            --text-primary: #F0F4F8;
-            --text-secondary: #88a2b8;
-            --border: #004a8d;
-            --sidebar-width: 260px;
-            --sidebar-width-collapsed: 80px;
-            
-            --success: #8cc63f;
-            --error: #e53e3e;
-            --info: #00a9e0;
-        }
-
-        body.light-theme {
             --background: #e5e7eb;
             --surface: #ffffff;
             --primary: #004a8d;
@@ -40,6 +21,10 @@
             --secondary-accent: #28a745;
             --secondary-accent-shadow: rgba(40, 167, 69, 0.2);
             --success: #28a745;
+            --error: #e53e3e;
+            --info: #00a9e0;
+            --sidebar-width: 260px;
+            --sidebar-width-collapsed: 80px;
         }
 
         * {
@@ -71,9 +56,9 @@
             overflow-x: hidden;
         }
 
-        .app-layout {
-            display: flex;
-        }
+        .app-layout, #login-screen { display: none; }
+        body.show-dashboard .app-layout { display: flex; }
+        body.show-login #login-screen { display: flex; }
         
         .page-content {
             display: none;
@@ -115,9 +100,9 @@
         .sidebar-nav li a { display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-radius: 8px; text-decoration: none; color: var(--text-secondary); font-weight: 500; transition: background-color 0.2s ease, color 0.2s ease; cursor: pointer; }
         .sidebar-nav li a span { white-space: nowrap; }
         .sidebar-nav li a svg { width: 22px; height: 22px; flex-shrink: 0; }
-        .sidebar-nav li a:hover { background-color: rgba(140, 198, 63, 0.15); color: var(--secondary-accent); }
-        .sidebar-nav li a.active { background-color: var(--secondary-accent); color: var(--background); font-weight: 600; }
-        .sidebar-nav li a.active svg { stroke: var(--background); }
+        .sidebar-nav li a:hover { background-color: rgba(40, 167, 69, 0.1); color: var(--secondary-accent); }
+        .sidebar-nav li a.active { background-color: var(--secondary-accent); color: white; font-weight: 600; }
+        .sidebar-nav li a.active svg { stroke: white; }
         .container { width: 100%; max-width: 1600px; margin: 0 auto; }
 
         .sidebar-footer {
@@ -149,7 +134,7 @@
 
         #sidebar-toggle svg {
             transition: transform 0.3s ease-in-out;
-            stroke: var(--background);
+            stroke: white;
         }
 
         /* --- ESTADO RECOLHIDO --- */
@@ -189,16 +174,10 @@
         .btn:hover { background-color: var(--primary-hover); }
         .btn:disabled { background-color: #555; cursor: not-allowed; }
         .btn.btn-danger { background-color: var(--error); color: white; }
-        .btn.btn-secondary { background-color: #374151; color: var(--text-primary); }
-        .btn.btn-secondary:hover { background-color: #4b5563; }
+        .btn.btn-secondary { background-color: #e2e8f0; color: var(--text-primary); }
+        .btn.btn-secondary:hover { background-color: #cbd5e1; }
         .btn.btn-icon { padding: 8px; background-color: var(--surface); color: var(--text-secondary); border: 1px solid var(--border); }
-        .btn.btn-icon:hover { background-color: #1F2937; color: var(--text-primary); }
-
-        #theme-toggle { padding: 8px; width: 40px; height: 40px; flex-shrink: 0; }
-        #theme-toggle .sun { display: none; }
-        #theme-toggle .moon { display: block; }
-        body.light-theme #theme-toggle .sun { display: block; }
-        body.light-theme #theme-toggle .moon { display: none; }
+        .btn.btn-icon:hover { background-color: #e2e8f0; }
 
         /* --- ELEMENTOS GERAIS --- */
         .card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 25px; margin-bottom: 30px; }
@@ -214,8 +193,7 @@
             transition: border-color 0.2s ease, box-shadow 0.2s ease; 
         }
         .input-group input:focus { outline: none; border-color: var(--secondary-accent); box-shadow: 0 0 0 3px var(--secondary-accent-shadow); }
-        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
-        body.light-theme input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4); }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4); }
         
         /* --- CUSTOM SELECT --- */
         .custom-select-wrapper { position: relative; }
@@ -237,13 +215,13 @@
         }
         .custom-select-wrapper.open .custom-options { display: block; }
         .custom-option { padding: 10px 15px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
-        .custom-option:hover { background-color: rgba(255, 255, 255, 0.05); }
+        .custom-option:hover { background-color: rgba(0, 0, 0, 0.05); }
         .custom-option input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); }
         .custom-option label { margin-bottom: 0; cursor: pointer; width: 100%; }
         
         /* --- NOTIFICAÇÕES --- */
         .notification-container { position: fixed; bottom: 20px; right: 20px; z-index: 1001; display: flex; flex-direction: column; gap: 10px; }
-        .toast { color: #0A0F1A; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); opacity: 0; transform: translateX(120%); animation: slideIn 0.4s forwards, fadeOut 0.4s 4s forwards; font-weight: 600; }
+        .toast { color: #ffffff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); opacity: 0; transform: translateX(120%); animation: slideIn 0.4s forwards, fadeOut 0.4s 4s forwards; font-weight: 600; }
         .toast.success { background-color: var(--success); }
         .toast.error { background-color: var(--error); color: white; }
         @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
@@ -272,14 +250,11 @@
         .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-top: 30px; }
         .table-scroller { overflow-x: auto; }
         .table { width: 100%; border-collapse: collapse; }
-        .table thead th { background: #0A0F1A; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .5px; font-size: .75rem; padding: 12px 15px; text-align: left; white-space: nowrap;}
+        .table thead th { background: #f8f9fa; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .5px; font-size: .75rem; padding: 12px 15px; text-align: left; white-space: nowrap;}
         .table td { padding: 14px 15px; border-bottom: 1px solid var(--border); font-size: .9rem; white-space: nowrap; }
         .table td.highlight-col {
             font-weight: 600;
-            background-color: rgba(140, 198, 63, 0.05); /* Usando a cor de destaque secundária com baixa opacidade */
-        }
-        body.light-theme .table td.highlight-col {
-            background-color: rgba(0, 74, 141, 0.05); /* Usando a cor primária para o tema claro */
+            background-color: rgba(0, 74, 141, 0.05);
         }
         .variation-cell {
             display: flex;
@@ -305,7 +280,7 @@
             opacity: 0.8;
         }
         .table tbody tr:last-child td { border-bottom: none; }
-        .table tbody tr:hover { background: #1F2937; }
+        .table tbody tr:hover { background: #f1f5f9; }
         .table-actions { display: flex; gap: 10px; align-items: center; }
         .loading-spinner {
             border: 2px solid var(--border);
@@ -318,92 +293,6 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .titular-sub-row { font-size: 0.8rem; color: var(--text-secondary); padding-left: 10px; }
 
-        /* --- PÁGINA ANÁLISE GRÁFICA (NOVO LAYOUT) --- */
-        #analysis-page .charts-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 1.5rem;
-        }
-        .investor-card {
-            background-color: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-            overflow: hidden;
-        }
-        .investor-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 15px;
-        }
-        .card-header h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-        .card-summary {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-        }
-        .latest-balance .balance-value {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        .latest-balance .balance-date {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-top: -5px;
-        }
-        .chart-wrapper {
-            height: 100px;
-            margin-top: 20px;
-            opacity: 1;
-            transition: height 0.4s ease, opacity 0.4s ease;
-        }
-        .investor-card.expanded {
-            grid-column: 1 / -1;
-            cursor: default;
-        }
-        .investor-card.expanded:hover {
-            transform: none;
-            box-shadow: none;
-        }
-        .investor-card.expanded .chart-wrapper {
-            height: 300px;
-        }
-
-        .card-variation {
-            text-align: right;
-        }
-        .card-variation .variation-cell {
-            justify-content: flex-end;
-            gap: 5px;
-        }
-        .card-variation .variation-cell svg {
-            width: 14px;
-            height: 14px;
-        }
-         .card-variation .variation-details {
-            line-height: 1.3;
-        }
-         .card-variation .variation-percent {
-             font-size: 0.75rem;
-         }
-
-
-        #analysis-status { margin-bottom: 2rem; }
-        #analysis-status.status-error { background-color: #4d1a1a; border-color: var(--error); color: #FFCDD2; }
-        #analysis-status.status-success { background-color: #1a4d3e; border-color: var(--success); color: #C8E6C9; }
-        #analysis-status.status-info { background-color: #1e3a8a; border-color: var(--info); color: #dbeafe; }
-
         /* --- TELA DE LOGIN --- */
         #login-screen {
             position: fixed;
@@ -412,7 +301,6 @@
             width: 100%;
             height: 100%;
             background-color: var(--background);
-            display: flex;
             align-items: center;
             justify-content: center;
             z-index: 2000;
@@ -426,7 +314,7 @@
             width: 100%;
             max-width: 400px;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
         .login-logo {
             height: 50px;
@@ -484,18 +372,9 @@
             border-color: var(--primary);
         }
 
-
-        /* --- Light Theme Overrides --- */
-        body.light-theme .btn.btn-icon:hover { background-color: #e2e8f0; }
-        body.light-theme .table thead th { background: #f8f9fa; }
-        body.light-theme .table tbody tr:hover { background: #f1f5f9; }
-        body.light-theme .btn-secondary { background-color: #e2e8f0; color: var(--text-primary); }
-        body.light-theme .btn-secondary:hover { background-color: #cbd5e1; }
-        body.light-theme .custom-option:hover { background-color: rgba(0, 0, 0, 0.05); }
-
     </style>
 </head>
-<body class="show-dashboard">
+<body class="show-login">
 
     <div id="particles-js"></div>
 
@@ -518,7 +397,7 @@
         </div>
     </div>
 
-    <div class="app-layout" style="display: none;">
+    <div class="app-layout">
         <button id="sidebar-toggle">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
@@ -528,38 +407,21 @@
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                     <li><a data-page="analysis" class="active"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg><span>Análise</span></a></li>
-                     <li><a data-page="whatsapp"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg><span>Disparos</span></a></li>
+                     <li><a data-page="whatsapp" class="active"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg><span>Disparos</span></a></li>
                      <li><a data-page="users"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Usuários</span></a></li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
-                <button id="theme-toggle" class="btn btn-icon" title="Alternar tema">
-                    <svg class="sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-                    <svg class="moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                 <button id="logout-btn" class="btn btn-icon" title="Sair">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                 </button>
             </div>
         </aside>
 
         <main class="main-content">
             
-            <!-- PÁGINA DE ANÁLISE GRÁFICA -->
-            <div id="analysis-page" class="page-content active">
-                <div class="container">
-                    <div class="header-controls">
-                        <h1 class="panel-title">Análise de Saldo Diário</h1>
-                    </div>
-                    <p class="page-subtitle">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-                        <span>Análise da evolução de saldo de todos os investidores nos últimos 30 dias.</span>
-                    </p>
-                    <div id="analysis-status" class="card" style="display: none;"></div>
-                    <div class="charts-container" id="charts-container"></div>
-                </div>
-            </div>
-
             <!-- PÁGINA DE CONFERÊNCIA E DISPARO -->
-            <div id="whatsapp-page" class="page-content">
+            <div id="whatsapp-page" class="page-content active">
                  <div class="container">
                     <div class="header-controls">
                         <h1 class="panel-title">Conferência e Disparo em Lote</h1>
@@ -616,8 +478,9 @@
                             </table>
                         </div>
                     </div>
-                    <div style="text-align: right; margin-top: 20px;">
-                        <button id="send-all-btn" class="btn" disabled><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Enviar Extratos por E-mail</button>
+                    <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px;">
+                         <button id="send-whatsapp-btn" class="btn" disabled style="background-color: #25D366; --primary-hover: #128C7E;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>Enviar por WhatsApp</button>
+                        <button id="send-all-btn" class="btn" disabled><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Enviar por E-mail</button>
                     </div>
                 </div>
             </div>
@@ -663,7 +526,7 @@
                 <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
                     <div class="input-group"><label for="user-investidor">Investidor</label><input type="text" id="user-investidor" placeholder="Nome do Investidor" required></div>
                     <div class="input-group"><label for="user-anima">Usuário Anima</label><input type="text" id="user-anima" placeholder="Nome do usuário no sistema Anima"></div>
-                    <div class="input-group" style="grid-column: 1 / -1;"><label for="user-email">Email</label><input type="email" id="user-email" placeholder="contato@email.com" required></div>
+                    <div class="input-group" style="grid-column: 1 / -1;"><label for="user-email">Email</label><input type="text" id="user-email" placeholder="contato@email.com, outro@email.com"></div>
                     <div class="input-group" style="grid-column: 1 / -1;"><label for="user-contato">Contato (Telefone)</label><input type="text" id="user-contato" placeholder="(XX) XXXXX-XXXX"></div>
                 </div>
                 <button type="submit" class="btn" style="width: 100%; margin-top: 20px;">Salvar</button>
@@ -687,12 +550,17 @@
     document.addEventListener('DOMContentLoaded', () => {
         
         // --- CONFIGURAÇÃO SUPABASE E N8N ---
-        const SUPABASE_URL = 'https://supabase.infodash.com.br';
+        const SUPABASE_API_URL = 'https://supabase.infodash.com.br/rest/v1/dusuariosemail';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzE1MDUwODAwLAogICJleHAiOiAxODcyODE3MjAwCn0.BAmp3D2UEBQIUlhNGp5Q7sDMN3QLRyib7aztmMgH-_c';
-        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { db: { schema: 'dbfirma_capital' } });
+        const SUPABASE_HEADERS = {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+        };
+
         const N8N_CHECK_WEBHOOK_URL = 'https://webhook.infodash.com.br/webhook/dc26f840-eccc-435e-8c63-3c34a44a9ee7';
         const N8N_SEND_ALL_WEBHOOK_URL = 'https://webhook.infodash.com.br/webhook/db24508d-15d9-4854-838f-2f319ba0f21d';
-        const N8N_ANALYSIS_WEBHOOK_URL = 'https://webhook.infodash.com.br/webhook/e6e23f23-4387-41cc-9bd3-cdee3de6ffb8';
+        const N8N_WHATSAPP_SEND_URL = 'https://webhook.infodash.com.br/webhook/0a683d6a-b796-4b7f-b5a9-e8016a362d07';
         const EVO_API_URL = "https://api.infodash.com.br";
         const EVO_API_KEY = "2533B88A-8665-49DB-BC68-C4D7D7FFF710";
         
@@ -705,14 +573,14 @@
 
         // --- DOM Elements ---
         const body = document.body;
-        const appLayout = document.querySelector('.app-layout');
         const loginScreen = document.getElementById('login-screen');
+        const appLayout = document.querySelector('.app-layout');
         const loginForm = document.getElementById('login-form');
         const loginError = document.getElementById('login-error');
         const sidebarToggle = document.getElementById('sidebar-toggle');
-        const themeToggle = document.getElementById('theme-toggle');
         const navLinks = document.querySelectorAll('.sidebar-nav a');
         const notificationContainer = document.getElementById('notification-container');
+        const logoutBtn = document.getElementById('logout-btn');
         
         // --- Conferência Page Elements ---
         const customSelectWrapper = document.getElementById('investor-selector-wrapper');
@@ -723,6 +591,7 @@
         const addInvestorBtn = document.getElementById('add-investor-btn');
         const batchTableBody = document.getElementById('batch-table-body');
         const sendAllBtn = document.getElementById('send-all-btn');
+        const sendWhatsappBtn = document.getElementById('send-whatsapp-btn');
         const datePresetButtons = document.querySelectorAll('.btn-preset');
 
         // --- Users Page Elements ---
@@ -731,12 +600,6 @@
         const usersTableBody = document.getElementById('users-table-body');
         const totalUsersStat = document.getElementById('total-users-stat');
         const totalInvestorsStat = document.getElementById('total-investors-stat');
-
-        // --- Analysis Page Elements ---
-        const analysisStatusDiv = document.getElementById('analysis-status');
-        const analysisChartsContainer = document.getElementById('charts-container');
-        let analysisCharts = new Map();
-        let analysisFullData = new Map();
 
         // --- Modal Elements ---
         const userModal = document.getElementById('user-modal');
@@ -762,20 +625,22 @@
         
         // --- DATA LOADING & PROCESSING ---
         async function loadAllData() {
-            const { data, error } = await sb
-                .from('dUsuariosEmail')
-                .select('id, email, "usuarioAnima", investidor, contato')
-                .order('investidor', { ascending: true });
-
-            if (error) {
-                showNotification('Erro ao buscar dados.', 'error');
-                return;
+            try {
+                 const response = await fetch(`${SUPABASE_API_URL}?select=id,email,usuarioanima,investidor,contato&order=investidor.asc`, {
+                    headers: { ...SUPABASE_HEADERS, 'Accept-Profile': 'dbfirma_capital' }
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `API Error: ${response.statusText}`);
+                }
+                const data = await response.json();
+                allUsersData = data;
+                processInvestors();
+                populateInvestorSelector();
+                renderUsersPage();
+            } catch(error) {
+                showNotification(`Erro ao buscar dados: ${error.message}`, 'error');
             }
-            
-            allUsersData = data;
-            processInvestors();
-            populateInvestorSelector();
-            renderUsersPage();
         }
 
         function processInvestors() {
@@ -849,10 +714,9 @@
                     return;
                 }
                 
-                // Abordagem sequencial para evitar race conditions
                 for (const investorName of selectedInvestors) {
                     const accounts = investorsMap.get(investorName) || [];
-                    const titulars = accounts.map(acc => acc.usuarioAnima).filter(Boolean);
+                    const titulars = accounts.map(acc => acc.usuarioanima).filter(Boolean);
 
                     if (titulars.length === 0) {
                         showNotification(`Investidor "${investorName}" não possui contas 'usuário Anima' válidas.`, 'error');
@@ -932,12 +796,14 @@
             batchTableBody.innerHTML = '';
             if (batchList.size === 0) {
                 batchTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Adicione investidores para conferir os saldos.</td></tr>';
-                sendAllBtn.disabled = true;
+                if(sendAllBtn) sendAllBtn.disabled = true;
+                if(sendWhatsappBtn) sendWhatsappBtn.disabled = true;
                 return;
             }
             
             const hasLoadedInvestors = Array.from(batchList.values()).some(data => data.status === 'loaded');
-            sendAllBtn.disabled = !hasLoadedInvestors;
+            if(sendAllBtn) sendAllBtn.disabled = !hasLoadedInvestors;
+            if(sendWhatsappBtn) sendWhatsappBtn.disabled = !hasLoadedInvestors;
             
             const renderedInvestors = new Set();
             batchList.forEach((data, uniqueId) => {
@@ -956,7 +822,6 @@
                      default: statusHtml = `-`
                 }
                 
-                // --- Lógica de Variação ---
                 let variationHtml = '-';
                 const { saldoAnterior, saldoAtual } = data;
 
@@ -1028,34 +893,108 @@
                     showNotification('As datas de início e fim devem estar preenchidas para o disparo.', 'error');
                     return;
                 }
-                const investorsToSend = Array.from(batchList.values()).filter(data => data.status === 'loaded');
-                if (investorsToSend.length === 0) {
+                const itemsToSend = Array.from(batchList.values()).filter(data => data.status === 'loaded');
+                const uniqueInvestors = [...new Set(itemsToSend.map(item => item.investorName))];
+
+                if (uniqueInvestors.length === 0) {
                     showNotification('Nenhum investidor com dados carregados para disparar.', 'info');
                     return;
                 }
                 sendAllBtn.disabled = true;
                 sendAllBtn.innerHTML = '<div class="loading-spinner" style="border-top-color: #0A0F1A;"></div> Enviando...';
+                
                 let successCount = 0;
-                for (const investorData of investorsToSend) {
+                for (const investorName of uniqueInvestors) {
                     try {
-                        // Note: This sends one webhook per investor, not per account. Adjust if needed.
-                        const payload = { investidor: investorData.investorName, dataInicio: startDate, dataFim: endDate };
+                        const payload = { investidor: investorName, dataInicio: startDate, dataFim: endDate };
                         const response = await fetch(N8N_SEND_ALL_WEBHOOK_URL, {
                             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
                         });
                         if (response.ok) {
                             successCount++;
-                            investorData.status = 'sent';
+                            batchList.forEach(item => {
+                                if (item.investorName === investorName) item.status = 'sent';
+                            });
                         } else { throw new Error(`Status ${response.status}`); }
                     } catch (error) {
-                         showNotification(`Erro ao enviar para ${investorData.investorName}: ${error.message}`, 'error');
-                         investorData.status = 'send-error';
+                         showNotification(`Erro ao enviar para ${investorName}: ${error.message}`, 'error');
+                         batchList.forEach(item => {
+                            if (item.investorName === investorName) item.status = 'send-error';
+                         });
                     }
                 }
-                renderBatchTable(); // Re-render all at the end
-                showNotification(`${successCount} de ${investorsToSend.length} investidores enviados com sucesso!`, 'success');
+                
+                renderBatchTable();
+                showNotification(`${successCount} de ${uniqueInvestors.length} investidores enviados com sucesso!`, 'success');
                 sendAllBtn.disabled = false;
-                sendAllBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Enviar Extratos por E-mail';
+                sendAllBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Enviar por E-mail';
+            });
+        }
+        
+        if (sendWhatsappBtn) {
+            sendWhatsappBtn.addEventListener('click', async () => {
+                const startDate = startDateInput.value;
+                const endDate = endDateInput.value;
+                if (!startDate || !endDate) {
+                    showNotification('As datas de início e fim devem estar preenchidas para o disparo.', 'error');
+                    return;
+                }
+                
+                const itemsToSend = Array.from(batchList.values()).filter(data => data.status === 'loaded');
+                const uniqueInvestors = [...new Set(itemsToSend.map(item => item.investorName))];
+
+                if (uniqueInvestors.length === 0) {
+                    showNotification('Nenhum investidor com dados carregados para disparar.', 'info');
+                    return;
+                }
+
+                sendWhatsappBtn.disabled = true;
+                sendWhatsappBtn.innerHTML = '<div class="loading-spinner" style="border-top-color: #FFF;"></div> Enviando...';
+                
+                let successCount = 0;
+                for (const investorName of uniqueInvestors) {
+                    const userWithContact = allUsersData.find(u => u.investidor === investorName && u.contato);
+
+                    if (!userWithContact) {
+                        showNotification(`Contato não encontrado para ${investorName}. Pulando envio.`, 'error');
+                        batchList.forEach(item => {
+                            if (item.investorName === investorName) {
+                                item.status = 'send-error';
+                            }
+                        });
+                        continue;
+                    }
+                    
+                    const contactNumber = userWithContact.contato.replace(/\D/g, '');
+
+                    try {
+                        const payload = { 
+                            investidor: investorName, 
+                            dataInicio: startDate, 
+                            dataFim: endDate,
+                            contato: contactNumber
+                        };
+                        const response = await fetch(N8N_WHATSAPP_SEND_URL, {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                        });
+                        if (response.ok) {
+                            successCount++;
+                            batchList.forEach(item => {
+                               if (item.investorName === investorName) item.status = 'sent';
+                            });
+                        } else { throw new Error(`Status ${response.status}`); }
+                    } catch (error) {
+                         showNotification(`Erro ao enviar para ${investorName}: ${error.message}`, 'error');
+                         batchList.forEach(item => {
+                            if (item.investorName === investorName) item.status = 'send-error';
+                         });
+                    }
+                }
+                
+                renderBatchTable();
+                showNotification(`${successCount} de ${uniqueInvestors.length} investidores enviados com sucesso via WhatsApp!`, 'success');
+                sendWhatsappBtn.disabled = false;
+                sendWhatsappBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>Enviar por WhatsApp';
             });
         }
 
@@ -1088,8 +1027,8 @@
                     tr.dataset.userId = user.id;
                     tr.innerHTML = `
                         <td>${user.investidor || 'N/A'}</td>
-                        <td>${user.usuarioAnima || 'N/A'}</td>
-                        <td>${user.email}</td>
+                        <td>${user.usuarioanima || 'N/A'}</td>
+                        <td>${user.email || 'N/A'}</td>
                         <td>
                             ${user.contato || 'N/A'}
                             <span class="whatsapp-status-icon unchecked" id="status-${user.id}" title="Não verificado">
@@ -1119,7 +1058,6 @@
             const usersToValidate = allUsersData.filter(user => user.contato);
             if (usersToValidate.length === 0) return;
             
-            // Agrupa IDs de usuário por número de telefone para lidar com duplicados
             const validationMap = new Map();
             usersToValidate.forEach(user => {
                 let phoneNumber = user.contato.replace(/\D/g, '');
@@ -1132,11 +1070,9 @@
                 validationMap.get(phoneNumber).push(user.id);
             });
 
-            // Cria uma lista de números únicos para a API
             const numbersPayload = [...validationMap.keys()];
             if (numbersPayload.length === 0) return;
             
-            // Atualiza a UI para mostrar que a validação está em progresso
             validationMap.forEach(userIds => {
                 userIds.forEach(userId => {
                     const statusIcon = document.getElementById(`status-${userId}`);
@@ -1205,7 +1141,7 @@
                 userModalTitle.textContent = 'Editar Usuário';
                 document.getElementById('user-id').value = user.id;
                 document.getElementById('user-investidor').value = user.investidor || '';
-                document.getElementById('user-anima').value = user.usuarioAnima || '';
+                document.getElementById('user-anima').value = user.usuarioanima || '';
                 document.getElementById('user-email').value = user.email || '';
                 document.getElementById('user-contato').value = user.contato || '';
             } else { userModalTitle.textContent = 'Adicionar Novo Usuário'; }
@@ -1222,13 +1158,42 @@
             const id = document.getElementById('user-id').value;
             const userData = {
                 investidor: document.getElementById('user-investidor').value.trim(),
-                usuarioAnima: document.getElementById('user-anima').value.trim(),
+                usuarioanima: document.getElementById('user-anima').value.trim(),
                 email: document.getElementById('user-email').value.trim(),
                 contato: document.getElementById('user-contato').value.trim(),
             };
-            const response = id ? await sb.from('dUsuariosEmail').update(userData).eq('id', id) : await sb.from('dUsuariosEmail').insert([userData]);
-            if (response.error) { showNotification(`Erro: ${response.error.message}`, 'error'); } 
-            else { showNotification(`Usuário ${id ? 'atualizado' : 'salvo'} com sucesso!`); closeUserModal(); await loadAllData(); }
+            
+            try {
+                let response;
+                const writeHeaders = {
+                    ...SUPABASE_HEADERS,
+                    'Content-Profile': 'dbfirma_capital'
+                };
+
+                if (id) { // Update
+                    response = await fetch(`${SUPABASE_API_URL}?id=eq.${id}`, {
+                        method: 'PATCH',
+                        headers: {...writeHeaders, 'Prefer': 'return=minimal' },
+                        body: JSON.stringify(userData)
+                    });
+                } else { // Insert
+                    response = await fetch(SUPABASE_API_URL, {
+                        method: 'POST',
+                        headers: {...writeHeaders, 'Prefer': 'return=representation' },
+                        body: JSON.stringify(userData)
+                    });
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `API Error: ${response.statusText}`);
+                }
+                showNotification(`Usuário ${id ? 'atualizado' : 'salvo'} com sucesso!`);
+                closeUserModal();
+                await loadAllData();
+            } catch(error) {
+                 showNotification(`Erro: ${error.message}`, 'error');
+            }
         });
         function openConfirmModal(message, onConfirm) {
             confirmMessage.textContent = message;
@@ -1240,240 +1205,6 @@
         confirmCancelBtn.addEventListener('click', closeConfirmModal);
         window.onclick = (event) => { if (event.target == userModal) closeUserModal(); if(event.target == confirmModal) closeConfirmModal(); };
 
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const username = loginForm.querySelector('#username').value;
-            const password = loginForm.querySelector('#password').value;
-
-            if (username === 'firma' && password === 'firma2025*') {
-                loginScreen.style.opacity = '0';
-                setTimeout(() => {
-                    loginScreen.style.display = 'none';
-                    appLayout.style.display = 'flex';
-                }, 500); // Aguarda o fade-out
-            } else {
-                loginError.textContent = 'Usuário ou senha inválidos.';
-                loginForm.querySelector('#password').value = '';
-            }
-        });
-
-        // --- Analysis Page Logic ---
-        function setAnalysisStatus(message, type = 'info') {
-            analysisStatusDiv.style.display = 'block';
-            analysisStatusDiv.textContent = message;
-            analysisStatusDiv.className = `card status-${type}`;
-        }
-
-        function renderCardVariation(cardElement, dataSlice) {
-            const variationContainer = cardElement.querySelector('.card-variation');
-            if (!variationContainer || dataSlice.length < 2) {
-                if(variationContainer) variationContainer.innerHTML = '';
-                return;
-            };
-
-            const firstValue = dataSlice[0].saldo_atual;
-            const lastValue = dataSlice[dataSlice.length - 1].saldo_atual;
-            
-            const variacaoAbsoluta = Math.abs(lastValue) - Math.abs(firstValue);
-            const isImprovement = variacaoAbsoluta > 0;
-            const isWorsening = variacaoAbsoluta < 0;
-            const variacaoPercent = firstValue !== 0 ? (variacaoAbsoluta / Math.abs(firstValue)) * 100 : 0;
-            
-            let icon = '';
-            let variationClass = '';
-            if (isImprovement) {
-                variationClass = 'variation-up';
-                icon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m18 11-6-6-6 6"/></svg>`;
-            } else if (isWorsening) {
-                variationClass = 'variation-down';
-                icon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m6 13 6 6 6-6"/></svg>`;
-            }
-
-            variationContainer.innerHTML = `
-                <div class="variation-cell ${variationClass}">
-                    <div class="variation-details">
-                        <span>${money(variacaoAbsoluta)}</span>
-                        <span class="variation-percent">${variacaoPercent.toFixed(2)}%</span>
-                    </div>
-                    ${icon}
-                </div>
-            `;
-        }
-
-
-        function handleCardClick(event) {
-            const clickedCard = event.currentTarget;
-            const investorName = clickedCard.dataset.investorName;
-            const isCurrentlyExpanded = clickedCard.classList.contains('expanded');
-            const chart = analysisCharts.get(investorName);
-            if(!chart) return;
-
-            // Recolhe qualquer outro cartão que esteja expandido
-            document.querySelectorAll('.investor-card.expanded').forEach(card => {
-                if (card !== clickedCard) {
-                    card.classList.remove('expanded');
-                    const otherChart = analysisCharts.get(card.dataset.investorName);
-                    if(otherChart) {
-                        otherChart.options.scales.x.ticks.display = false; 
-                        otherChart.options.scales.y.display = false;
-                        otherChart.update('none'); // 'none' for no animation
-                    }
-                }
-            });
-
-            // Expande ou recolhe o cartão clicado
-            const willBeExpanded = !isCurrentlyExpanded;
-            clickedCard.classList.toggle('expanded', willBeExpanded);
-            
-            // Mostra/esconde eixos no gráfico atual
-            chart.options.scales.x.ticks.display = willBeExpanded; 
-            chart.options.scales.y.display = willBeExpanded;
-            chart.update();
-        }
-        
-        function renderInvestorCard(investorData) {
-            if (!investorData || !investorData.investidor || !Array.isArray(investorData.dias) || investorData.dias.length === 0) return;
-            
-            investorData.dias.sort((a, b) => new Date(a.DATA) - new Date(b.DATA));
-            analysisFullData.set(investorData.investidor, investorData.dias);
-            
-            // Usa sempre os dados dos últimos 30 dias para todas as visualizações
-            const thirtyDayData = investorData.dias;
-            const lastDataPoint = thirtyDayData[thirtyDayData.length - 1];
-
-            const card = document.createElement('div');
-            card.className = 'investor-card';
-            card.dataset.investorName = investorData.investidor;
-
-            card.innerHTML = `
-                <div class="card-header">
-                    <h3>${investorData.investidor}</h3>
-                </div>
-                <div class="card-summary">
-                     <div class="latest-balance">
-                        <span class="balance-value">${money(Math.abs(lastDataPoint.saldo_atual))}</span>
-                        <span class="balance-date">Saldo em ${new Date(lastDataPoint.DATA).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</span>
-                    </div>
-                    <div class="card-variation"></div>
-                </div>
-                <div class="chart-wrapper">
-                    <canvas></canvas>
-                </div>
-            `;
-            
-            analysisChartsContainer.appendChild(card);
-            const canvas = card.querySelector('canvas');
-
-            const isLightTheme = document.body.classList.contains('light-theme');
-            const chartBorderColor = isLightTheme ? '#28a745' : '#8cc63f';
-            const chartBgColor = isLightTheme ? 'rgba(40, 167, 69, 0.1)' : 'rgba(140, 198, 63, 0.1)';
-
-            const chart = new Chart(canvas, {
-                type: 'line',
-                data: {
-                    labels: thirtyDayData.map(d => new Date(d.DATA).toLocaleDateString('pt-BR', {timeZone: 'UTC'})),
-                    datasets: [{
-                        label: 'Saldo Atual',
-                        data: thirtyDayData.map(d => Math.abs(d.saldo_atual)),
-                        borderColor: chartBorderColor,
-                        backgroundColor: chartBgColor,
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 2,
-                        pointHoverRadius: 5,
-                        pointBackgroundColor: chartBorderColor,
-                        pointBorderWidth: 2,
-                        pointBorderColor: 'var(--surface)'
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { 
-                            display: true, 
-                            position: 'top',
-                            align: 'start',
-                            labels: {
-                                color: 'var(--text-secondary)',
-                                boxWidth: 12,
-                                padding: 15
-                            }
-                        }, 
-                        tooltip: { enabled: true } 
-                    },
-                    scales: {
-                        y: { 
-                            display: false, 
-                            grid: { color: 'rgba(139, 148, 158, 0.1)' }, 
-                            ticks: { 
-                                color: 'var(--text-secondary)',
-                                callback: (value) => money(value) 
-                            } 
-                        },
-                        x: { 
-                            display: true, 
-                            grid: { display: false }, 
-                            ticks: { 
-                                display: false,
-                                color: 'var(--text-secondary)'
-                            } 
-                        }
-                    }
-                }
-            });
-
-            analysisCharts.set(investorData.investidor, chart);
-            renderCardVariation(card, thirtyDayData);
-            card.addEventListener('click', handleCardClick);
-        }
-
-        function groupDataForCharts(flatData) {
-            const grouped = {};
-            flatData.forEach(row => {
-                const investorName = row.investidor;
-                if (!grouped[investorName]) {
-                    grouped[investorName] = { investidor: investorName, dias: [], titulares: new Set() };
-                }
-                grouped[investorName].dias.push(row);
-                if (row.TITULAR) { grouped[investorName].titulares.add(row.TITULAR); }
-            });
-            return Object.values(grouped);
-        }
-        
-        async function loadAnalysisCharts() {
-            analysisChartsContainer.innerHTML = '';
-            analysisCharts.clear();
-            analysisFullData.clear();
-            setAnalysisStatus('Carregando dados dos últimos 30 dias...', 'info');
-
-            const endDate = new Date();
-            const startDate = new Date();
-            startDate.setDate(endDate.getDate() - 30);
-            const dataInicio = formatDate(startDate);
-            const dataFim = formatDate(endDate);
-
-            try {
-                const payload = { dataInicio, dataFim };
-                const response = await fetch(N8N_ANALYSIS_WEBHOOK_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-                });
-                if (!response.ok) throw new Error(`O servidor n8n respondeu com o status: ${response.status}`);
-                const rawResult = await response.json();
-                
-                let flatData = [];
-                if (Array.isArray(rawResult) && rawResult.length > 0 && rawResult[0].json) { flatData = rawResult.map(item => item.json); } 
-                else if (Array.isArray(rawResult)) { flatData = rawResult; }
-
-                if (flatData.length === 0) { throw new Error("A resposta do n8n está vazia ou em formato inesperado após o processamento."); }
-                
-                const chartReadyData = groupDataForCharts(flatData);
-                chartReadyData.forEach(renderInvestorCard);
-                setAnalysisStatus(`Exibindo ${chartReadyData.length} investidor(es). Clique em um cartão para expandir.`, 'success');
-            } catch (error) {
-                setAnalysisStatus(`ERRO: ${error.message}`, 'error');
-            }
-        }
-        
         // --- UI & THEME LOGIC ---
         function showPage(pageId) {
             document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
@@ -1494,14 +1225,28 @@
                             const actionButton = e.target.closest('.edit-user-btn, .delete-user-btn');
                             if (!actionButton) return;
                             const userId = e.target.closest('tr').dataset.userId;
-                            const user = allUsersData.find(u => u.id === userId);
+                            const user = allUsersData.find(u => u.id == userId);
                             if (actionButton.classList.contains('edit-user-btn')) {
                                 openUserModal(user);
                             } else if (actionButton.classList.contains('delete-user-btn')) {
                                 openConfirmModal(`Tem certeza que deseja excluir o usuário "${user.investidor || user.email}"?`, async () => {
-                                    const { error } = await sb.from('dUsuariosEmail').delete().eq('id', userId);
-                                    if (error) { showNotification(`Erro: ${error.message}`, 'error'); } 
-                                    else { showNotification('Usuário excluído com sucesso!'); await loadAllData(); }
+                                    try {
+                                        const response = await fetch(`${SUPABASE_API_URL}?id=eq.${user.id}`, {
+                                            method: 'DELETE',
+                                            headers: {
+                                                ...SUPABASE_HEADERS,
+                                                'Content-Profile': 'dbfirma_capital'
+                                            }
+                                        });
+                                        if (!response.ok) {
+                                            const errorData = await response.json();
+                                            throw new Error(errorData.message || `API Error: ${response.statusText}`);
+                                        }
+                                        showNotification('Usuário excluído com sucesso!');
+                                        await loadAllData();
+                                    } catch (error) {
+                                        showNotification(`Erro ao excluir: ${error.message}`, 'error');
+                                    }
                                 });
                             }
                         });
@@ -1510,62 +1255,46 @@
                 }
                 runAutomaticValidation();
             }
-            if(pageId === 'analysis'){
-                loadAnalysisCharts();
-            }
         }
         navLinks.forEach(link => { link.addEventListener('click', (e) => { e.preventDefault(); showPage(link.dataset.page); }); });
         
-        function updateParticlesTheme(theme) {
-            if (window.pJSDom && window.pJSDom[0] && window.pJSDom[0].pJS) {
-                const pJS = window.pJSDom[0].pJS;
-                const color = theme === 'light' ? '#004a8d' : '#8cc63f';
-                pJS.particles.color.value = color;
-                pJS.particles.line_linked.color = color;
-                pJS.fn.particlesDraw();
-            }
-        }
-        themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('light-theme');
-            const newTheme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
-            localStorage.setItem('theme', newTheme);
-            updateParticlesTheme(newTheme);
-            if (document.getElementById('analysis-page').classList.contains('active')) {
-                loadAnalysisCharts();
-            }
-        });
-        function applyInitialTheme() {
-            // Define o tema claro como padrão, independentemente das configurações do sistema ou do que estava salvo.
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            if (savedTheme === 'light') {
-                document.body.classList.add('light-theme');
-            } else {
-                document.body.classList.remove('light-theme');
-            }
-        }
         sidebarToggle.addEventListener('click', () => { appLayout.classList.toggle('sidebar-collapsed'); });
         
         // --- ANIMATIONS ---
-        const aiCanvas = document.getElementById('ai-animation-canvas');
-        if (aiCanvas) {
-            const ctx = aiCanvas.getContext('d');
-            let particles = []; const numParticles = 30;
-            function resizeCanvas() { aiCanvas.width = aiCanvas.offsetWidth; aiCanvas.height = aiCanvas.offsetHeight; }
-            class Particle { constructor() { this.x = Math.random()*aiCanvas.width; this.y = Math.random()*aiCanvas.height; this.vx = Math.random()*1-0.5; this.vy = Math.random()*1-0.5; this.radius = 1.5; } draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fillStyle = 'rgba(140, 198, 63, 0.7)'; ctx.fill(); } update() { this.x += this.vx; this.y += this.vy; if (this.x<0||this.x>aiCanvas.width) this.vx*=-1; if (this.y<0||this.y>aiCanvas.height) this.vy*=-1; } }
-            function createParticles() { particles = []; for (let i=0; i<numParticles; i++) { particles.push(new Particle()); } }
-            function connectParticles() { for (let i=0; i<numParticles; i++) { for (let j=i+1; j<numParticles; j++) { const dist = Math.sqrt((particles[i].x-particles[j].x)**2 + (particles[i].y-particles[j].y)**2); if (dist < 80) { ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.strokeStyle = `rgba(140, 198, 63, ${1-dist/80})`; ctx.lineWidth=0.5; ctx.stroke(); } } } }
-            function animate() { ctx.clearRect(0, 0, aiCanvas.width, aiCanvas.height); particles.forEach(p => { p.update(); p.draw(); }); connectParticles(); requestAnimationFrame(animate); }
-            window.addEventListener('resize', () => { resizeCanvas(); createParticles(); });
-            resizeCanvas(); createParticles(); animate();
-        }
-        particlesJS('particles-js',{ "particles": { "number": { "value": 60, "density": { "enable": true, "value_area": 800 } }, "color": { "value": "#8cc63f" }, "shape": { "type": "circle" }, "opacity": { "value": 0.5, "random": true, "anim": { "enable": true, "speed": 1, "opacity_min": 0.1, "sync": false } }, "size": { "value": 3, "random": true }, "line_linked": { "enable": true, "distance": 150, "color": "#8cc63f", "opacity": 0.2, "width": 1 }, "move": { "enable": true, "speed": 2, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false } }, "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": true, "mode": "grab" }, "onclick": { "enable": false }, "resize": true }, "modes": { "grab": { "distance": 140, "line_linked": { "opacity": 0.5 } } } }, "retina_detect": true });
+        particlesJS('particles-js',{ "particles": { "number": { "value": 60, "density": { "enable": true, "value_area": 800 } }, "color": { "value": "#004a8d" }, "shape": { "type": "circle" }, "opacity": { "value": 0.5, "random": true, "anim": { "enable": true, "speed": 1, "opacity_min": 0.1, "sync": false } }, "size": { "value": 3, "random": true }, "line_linked": { "enable": true, "distance": 150, "color": "#004a8d", "opacity": 0.2, "width": 1 }, "move": { "enable": true, "speed": 2, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false } }, "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": true, "mode": "grab" }, "onclick": { "enable": false }, "resize": true }, "modes": { "grab": { "distance": 140, "line_linked": { "opacity": 0.5 } } } }, "retina_detect": true });
         
         // --- INITIALIZATION ---
-        applyInitialTheme();
-        const initialTheme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
-        setTimeout(() => updateParticlesTheme(initialTheme), 500);
-        showPage('analysis');
-        loadAllData();
+        function handleAuth() {
+            const user = sessionStorage.getItem('user');
+            if (user) {
+                body.className = 'show-dashboard';
+                showPage('whatsapp');
+                loadAllData();
+            } else {
+                body.className = 'show-login';
+            }
+        }
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = loginForm.querySelector('#username').value;
+            const password = loginForm.querySelector('#password').value;
+
+            if (username === 'firma' && password === 'firma2025*') {
+                sessionStorage.setItem('user', username);
+                handleAuth();
+            } else {
+                loginError.textContent = 'Usuário ou senha inválidos.';
+                loginForm.querySelector('#password').value = '';
+            }
+        });
+        
+        logoutBtn.addEventListener('click', () => {
+            sessionStorage.removeItem('user');
+            handleAuth();
+        });
+
+        handleAuth();
     });
     </script>
 </body>
