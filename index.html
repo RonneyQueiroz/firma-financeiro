@@ -115,14 +115,14 @@
         }
         
         #sidebar-toggle {
-            position: absolute;
+            position: fixed; /* Corrigido para ser fixo na tela */
             top: 50%;
             left: calc(var(--sidebar-width) - 15px);
             transform: translateY(-50%);
             width: 30px;
             height: 30px;
             background-color: var(--secondary-accent);
-            border: 2px solid var(--background);
+            border: 2px solid var(--surface); /* Borda da cor da superfície para melhor contraste */
             border-radius: 50%;
             cursor: pointer;
             display: flex;
@@ -218,6 +218,15 @@
         .custom-option:hover { background-color: rgba(0, 0, 0, 0.05); }
         .custom-option input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); }
         .custom-option label { margin-bottom: 0; cursor: pointer; width: 100%; }
+        .group-header {
+            padding: 8px 15px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            background-color: var(--background);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
         
         /* --- NOTIFICAÇÕES --- */
         .notification-container { position: fixed; bottom: 20px; right: 20px; z-index: 1001; display: flex; flex-direction: column; gap: 10px; }
@@ -493,13 +502,7 @@
                         <button id="add-user-btn" class="btn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Adicionar Usuário</button>
                     </div>
                     <p class="page-subtitle"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Adicione, edite ou remova usuários da base de dados.</span></p>
-                    <div class="card">
-                        <h2>Configuração da API de Validação</h2>
-                        <div class="input-group">
-                            <label for="instance-name">Nome da Instância Conectada</label>
-                            <input type="text" id="instance-name" placeholder="Ex: AssistenteIA" value="AssistenteIA">
-                        </div>
-                    </div>
+                    
                     <div class="stats-cards">
                         <div class="stat-card"><h3>Total de Usuários</h3><p id="total-users-stat">0</p></div>
                         <div class="stat-card"><h3>Total de Investidores</h3><p id="total-investors-stat">0</p></div>
@@ -562,7 +565,8 @@
         const N8N_SEND_ALL_WEBHOOK_URL = 'https://webhook.infodash.com.br/webhook/db24508d-15d9-4854-838f-2f319ba0f21d';
         const N8N_WHATSAPP_SEND_URL = 'https://webhook.infodash.com.br/webhook/0a683d6a-b796-4b7f-b5a9-e8016a362d07';
         const EVO_API_URL = "https://api.infodash.com.br";
-        const EVO_API_KEY = "2533B88A-8665-49DB-BC68-C4D7D7FFF710";
+        const EVO_API_KEY = "63B2C7641426-4807-B518-A842DCBD5245";
+        const EVO_INSTANCE_NAME = "Aurora";
         
         // --- STATE ---
         let allUsersData = [];
@@ -657,16 +661,63 @@
         function populateInvestorSelector() {
             if (!customOptions) return;
             customOptions.innerHTML = '';
-            const sortedInvestors = [...investorsMap.keys()].sort();
-            sortedInvestors.forEach(name => {
-                const optionDiv = document.createElement('div');
+
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'p-2 flex gap-2 border-b';
+            actionsDiv.innerHTML = `
+                <button id="mark-all-btn" class="btn btn-secondary text-xs py-1 px-2 flex-grow">Marcar/Desmarcar Todos</button>
+            `;
+            customOptions.appendChild(actionsDiv);
+
+            const firmaAccountsList = ['VISION', 'DENISE PONTES', 'RAIMUNDO TADEU', 'LISBLU'];
+            const allInvestors = [...investorsMap.keys()].sort();
+            
+            const firmaInvestors = allInvestors.filter(name => firmaAccountsList.includes(name.toUpperCase()));
+            const otherInvestors = allInvestors.filter(name => !firmaAccountsList.includes(name.toUpperCase()));
+
+            const firmaHeader = document.createElement('div');
+            firmaHeader.className = 'group-header';
+            firmaHeader.textContent = 'Contas Firma';
+            customOptions.appendChild(firmaHeader);
+            firmaInvestors.forEach(name => renderInvestorOption(name));
+
+            if (otherInvestors.length > 0) {
+                const otherHeader = document.createElement('div');
+                otherHeader.className = 'group-header';
+                otherHeader.textContent = 'Outros';
+                customOptions.appendChild(otherHeader);
+                otherInvestors.forEach(name => renderInvestorOption(name));
+            }
+
+            document.getElementById('mark-all-btn').addEventListener('click', () => {
+                const checkboxes = customOptions.querySelectorAll('input[type="checkbox"]');
+                const shouldCheck = Array.from(checkboxes).some(cb => !cb.checked);
+                checkboxes.forEach(cb => cb.checked = shouldCheck);
+                updateSelectedInvestorsText();
+            });
+        }
+
+        function renderInvestorOption(name) {
+             const optionDiv = document.createElement('div');
                 optionDiv.className = 'custom-option';
                 optionDiv.dataset.value = name;
                 const safeId = `investor-${name.replace(/[^a-zA-Z0-9]/g, '')}`;
                 optionDiv.innerHTML = `<input type="checkbox" id="${safeId}"> <label for="${safeId}">${name}</label>`;
                 customOptions.appendChild(optionDiv);
-            });
         }
+        
+        function updateSelectedInvestorsText() {
+            const selectedCount = customOptions.querySelectorAll('input[type="checkbox"]:checked').length;
+            if (selectedCount === 0) {
+                customSelectTrigger.querySelector('span').textContent = 'Selecione...';
+            } else if (selectedCount === 1) {
+                const selectedName = customOptions.querySelector('input[type="checkbox"]:checked').closest('.custom-option').dataset.value;
+                customSelectTrigger.querySelector('span').textContent = selectedName;
+            } else {
+                customSelectTrigger.querySelector('span').textContent = `${selectedCount} investidores selecionados`;
+            }
+        }
+
 
         // --- BATCH PAGE LOGIC ---
         if (datePresetButtons.length > 0) {
@@ -1002,17 +1053,7 @@
         if (customSelectTrigger) {
             customSelectTrigger.addEventListener('click', () => { customSelectWrapper.classList.toggle('open'); });
             window.addEventListener('click', (e) => { if (customSelectWrapper && !customSelectWrapper.contains(e.target)) { customSelectWrapper.classList.remove('open'); } });
-            customOptions.addEventListener('change', () => {
-                const selectedCount = customOptions.querySelectorAll('input[type="checkbox"]:checked').length;
-                if (selectedCount === 0) {
-                    customSelectTrigger.querySelector('span').textContent = 'Selecione...';
-                } else if (selectedCount === 1) {
-                    const selectedName = customOptions.querySelector('input[type="checkbox"]:checked').closest('.custom-option').dataset.value;
-                    customSelectTrigger.querySelector('span').textContent = selectedName;
-                } else {
-                    customSelectTrigger.querySelector('span').textContent = `${selectedCount} investidores selecionados`;
-                }
-            });
+            customOptions.addEventListener('change', updateSelectedInvestorsText);
         }
 
         // --- Users Page Logic & Modals ---
@@ -1047,13 +1088,7 @@
         }
 
         async function runAutomaticValidation() {
-            const instanceNameInput = usersPage.querySelector('#instance-name');
-            const instanceName = instanceNameInput ? instanceNameInput.value.trim() : null;
-
-            if (!instanceName) {
-                console.warn('Nome da instância não definido. Validação automática pulada.');
-                return;
-            }
+            const instanceName = EVO_INSTANCE_NAME;
 
             const usersToValidate = allUsersData.filter(user => user.contato);
             if (usersToValidate.length === 0) return;
